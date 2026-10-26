@@ -7,9 +7,11 @@ import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/widgets/animated_entrance.dart';
 import 'package:amanjalan/core/widgets/press_scale.dart';
 import 'package:amanjalan/core/widgets/custom_bottom_nav.dart'; 
-import 'package:amanjalan/core/widgets/app_header.dart'; // IMPORT HEADER BARU
+import 'package:amanjalan/core/widgets/app_header.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart'; 
+import 'package:amanjalan/features/home/history_tab.dart'; // IMPORT TAB BARU
+import 'package:amanjalan/features/home/profile_tab.dart'; // IMPORT TAB BARU
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,8 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
               MapTab(
                 onBackToHome: () => setState(() => _currentIndex = 0),
               ),
-              _buildPlaceholderTab('Riwayat Perjalanan', Icons.history_rounded),
-              _buildPlaceholderTab('Profil Pengguna', Icons.person_rounded),
+              const HistoryTab(), // TAB KE-3
+              ProfileTab(onLogout: _logout), // TAB KE-4
             ],
           ),
         ),
@@ -103,9 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- HEADER BARU ---
           AppHeader(
-            onProfileTap: _logout, // Klik profil untuk demo logout
+            onProfileTap: () => setState(() => _currentIndex = 3), // Pindah ke tab profil jika foto dipencet
             onNotificationTap: () {},
           ),
           
@@ -116,7 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const SizedBox(height: 12),
                 
-                // --- KARTU UTAMA ---
                 AnimatedEntrance(
                   index: 1,
                   child: Container(
@@ -206,7 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // --- MODE PERJALANAN ---
                 AnimatedEntrance(
                   index: 2,
                   child: Text(
@@ -233,7 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // --- GUARDIAN ---
                 AnimatedEntrance(
                   index: 4,
                   child: Row(
@@ -279,7 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // --- TOMBOL SOS ---
                 AnimatedEntrance(
                   index: 6,
                   child: PressScale(
@@ -345,34 +342,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderTab(String title, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 80, color: AppColors.softPink),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Halaman ini sedang dalam pengembangan.',
-            style: GoogleFonts.nunito(
-              fontSize: 15,
-              color: AppColors.textMuted,
             ),
           ),
         ],
