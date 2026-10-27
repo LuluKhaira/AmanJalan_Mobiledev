@@ -45,7 +45,6 @@ class _MapTabState extends State<MapTab> {
                 child: AppHeader(
                   // showBackButton DIHAPUS
                   onProfileTap: () {},
-                  onNotificationTap: () {},
                 ),
               ),
             ),

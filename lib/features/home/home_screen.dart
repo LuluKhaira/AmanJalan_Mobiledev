@@ -14,13 +14,9 @@ import 'package:amanjalan/features/home/history_tab.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
 import 'package:amanjalan/features/home/profile_tab.dart';
 
-// Warna kartu SOS di Beranda (rose lembut; merah penuh hanya di layar darurat)
-const _sosRose = Color(0xFFB83A5E);
-const _sosBg = Color(0xFFFFF0F4);
-const _sosBorder = Color(0xFFFFD1DD);
+const _sosRed = Color(0xFF8E1B1B);
+const _sosBadge = Color(0xFFF7D6D9);
 
-/// Data sederhana Guardian untuk tampilan Beranda.
-/// TODO: ganti dengan data asli dari database / GuardianService.
 class _Guardian {
   final String name;
   final String relation;
@@ -35,7 +31,6 @@ class _Guardian {
   });
 }
 
-/// Mode perjalanan yang bisa dipilih.
 class _TravelMode {
   final IconData icon;
   final String label;
@@ -78,13 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  // Guardian maksimal 5 (sesuai paper konsep)
   static const _maxGuardians = 5;
 
   String _name = 'Pengguna';
   int _currentIndex = 0;
-  int _modeIndex = 0; // default: Jalan Kaki
-
+  int _modeIndex = 0;
   @override
   void initState() {
     super.initState();
@@ -96,8 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-
-  // ---------- Aksi ----------
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
@@ -111,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Penerima peringatan untuk layar darurat: Guardian utama + layanan polisi.
   List<EmergencyRecipient> get _emergencyRecipients {
     return [
       if (_guardians.isNotEmpty)
@@ -199,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           AppHeader(
             onProfileTap: () => _goToTab(3),
-            onNotificationTap: () {},
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -516,57 +505,121 @@ class _HomeScreenState extends State<HomeScreen> {
     return PressScale(
       child: GestureDetector(
         onTap: _openEmergency,
+        onLongPress: _openEmergency,
         child: Container(
-          padding: const EdgeInsets.all(20),
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: _sosBg,
+            color: _sosRed,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _sosBorder, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.shield_rounded,
-                  color: _sosRose,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tombol Darurat (SOS)',
-                      style: GoogleFonts.nunito(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: _sosRose,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Butuh bantuan mendesak?',
-                      style: GoogleFonts.nunito(
-                        fontSize: 13,
-                        color: _sosRose.withAlpha(179),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: _sosRose,
+            boxShadow: [
+              BoxShadow(
+                color: _sosRed.withAlpha(70),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                // Lingkaran dekoratif transparan di kanan belakang
+                Positioned(
+                  right: -15,
+                  top: -15,
+                  bottom: -15,
+                  child: Container(
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(22),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                // Konten Utama
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                  child: Row(
+                    children: [
+                      // Lingkaran SOS Kiri
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: const BoxDecoration(
+                          color: _sosBadge,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'SOS',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: _sosRed,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+
+                      // Teks Tengah: Judul & Subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tekan SOS\nMendesak',
+                              style: GoogleFonts.merriweather(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Badge Kanan: TAHAN 3 DTIK
+                      Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(48),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'TAHAN 3',
+                              style: GoogleFonts.merriweather(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFF3D5D9),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'DTIK',
+                              style: GoogleFonts.merriweather(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFF3D5D9),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

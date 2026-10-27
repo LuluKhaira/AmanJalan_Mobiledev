@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
+import 'package:amanjalan/features/notification/notification_screen.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onProfileTap;
   final VoidCallback? onNotificationTap;
-
-  // Parameter showBackButton & onBackTap DIHAPUS total
 
   const AppHeader({
     super.key,
@@ -60,9 +59,15 @@ class AppHeader extends StatelessWidget {
             ),
           ),
 
-          // Ikon Kanan (Lonceng & Profil)
           GestureDetector(
-            onTap: onNotificationTap,
+            onTap: onNotificationTap ??
+                () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationScreen(),
+                    ),
+                  );
+                },
             child: Stack(
               children: [
                 Container(
@@ -89,7 +94,6 @@ class AppHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           
-          // Profil (Menggunakan Icon User, bukan gambar internet agar tidak pernah blank)
           GestureDetector(
             onTap: onProfileTap,
             child: Container(

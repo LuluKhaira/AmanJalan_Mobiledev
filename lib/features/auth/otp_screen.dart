@@ -8,10 +8,8 @@ import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/features/permission/location_permission_screen.dart';
 
 const _fieldFill = Color(0xFFF6F5F8);
-const _lineColor = Color(0xFFE6E3EA);
 
 class OtpScreen extends StatefulWidget {
-  /// Nomor yang ditampilkan, contoh: "+62 812 3456 7890"
   final String phone;
 
   const OtpScreen({super.key, this.phone = '+62 812 3456 7890'});
@@ -53,7 +51,6 @@ class _OtpScreenState extends State<OtpScreen>
     super.dispose();
   }
 
-  // ---------- Logic ----------
   void _startTimer() {
     _timer?.cancel();
     setState(() => _secondsLeft = _resendSeconds);
