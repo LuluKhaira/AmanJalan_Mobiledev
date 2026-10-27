@@ -9,9 +9,9 @@ class ManageGuardianScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Data dummy untuk tampilan
     final guardians = [
-      {'name': 'Mama', 'relation': 'Ibu', 'phone': '+62 812-3456-7890'},
-      {'name': 'Nadia', 'relation': 'Sahabat', 'phone': '+62 813-1111-2222'},
-      {'name': 'Kakak', 'relation': 'Keluarga', 'phone': '+62 857-3333-4444'},
+      {'name': 'Ibu Nurhayati', 'relation': 'Wali Utama', 'phone': '+62 812-3456-7890'},
+      {'name': 'Dinda Permata', 'relation': 'Teman Sekos', 'phone': '+62 813-1111-2222'},
+      {'name': 'Salsabila Rahma', 'relation': 'Teman Kos', 'phone': '+62 857-3333-4444'},
     ];
 
     return Scaffold(

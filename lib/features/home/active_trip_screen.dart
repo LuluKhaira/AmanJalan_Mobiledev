@@ -64,10 +64,10 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => const FakeCallScreen(
-          callerName: 'Mama',
+          callerName: 'Ibu Nurhayati',
           guardianCount: 3,
           emergencyRecipients: [
-            EmergencyRecipient('Ibu (Kontak Utama)', '+62 812-3456-7890'),
+            EmergencyRecipient('Ibu Nurhayati (Wali Utama)', '+62 812-3456-7890'),
             EmergencyRecipient('Layanan Polisi Terpadu', 'Panggilan 110'),
           ],
         ),
@@ -236,11 +236,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _buildGuardianChip('Mama', 'MENONTON', const Color(0xFFF4E6F0)),
+                      _buildGuardianChip('Ibu Nurhayati', 'MENONTON', const Color(0xFFF4E6F0)),
                       const SizedBox(width: 8),
-                      _buildGuardianChip('Ayah', 'AKTIF', const Color(0xFFE6F0F4)),
+                      _buildGuardianChip('Dinda Permata', 'AKTIF', const Color(0xFFE6F0F4)),
                       const SizedBox(width: 8),
-                      _buildGuardianChip('Dinda', 'AKTIF', const Color(0xFFF0F4E6)),
+                      _buildGuardianChip('Salsabila Rahma', 'AKTIF', const Color(0xFFF0F4E6)),
                     ],
                   ),
                   const SizedBox(height: 24),

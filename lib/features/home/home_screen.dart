@@ -65,20 +65,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // List Guardian
   final List<_Guardian> _guardiansList = [
     const _Guardian(
-      name: 'Mama',
-      relation: 'Ibu',
+      name: 'Ibu Nurhayati',
+      relation: 'Wali Utama',
       phone: '+62 812-3456-7890',
       color: Color(0xFFF4E6F0),
     ),
     const _Guardian(
-      name: 'Nadia',
-      relation: 'Sahabat',
+      name: 'Dinda Permata',
+      relation: 'Teman Sekos',
       phone: '+62 813-1111-2222',
       color: Color(0xFFE6F0F4),
     ),
     const _Guardian(
-      name: 'Kakak',
-      relation: 'Keluarga',
+      name: 'Salsabila Rahma',
+      relation: 'Teman Kos',
       phone: '+62 857-3333-4444',
       color: Color(0xFFF0F4E6),
     ),
@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => FakeCallScreen(
-          callerName: caller?.name ?? 'Mama',
+          callerName: caller?.name ?? 'Ibu Nurhayati',
           guardianCount: _guardiansList.length,
           emergencyRecipients: _emergencyRecipients,
         ),

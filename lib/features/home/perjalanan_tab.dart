@@ -197,8 +197,6 @@ class _MonitoringView extends StatelessWidget {
           const _MotherCard(),
           const SizedBox(height: 18),
           const _TukarProteksiCard(),
-          const SizedBox(height: 18),
-          _HelpSosCard(onOpenEmergency: onOpenEmergency),
         ],
       ),
     );
@@ -662,66 +660,6 @@ class _WhiteBtn extends StatelessWidget {
   }
 }
 
-class _HelpSosCard extends StatelessWidget {
-  final VoidCallback? onOpenEmergency;
-  const _HelpSosCard({this.onOpenEmergency});
-
-  @override
-  Widget build(BuildContext context) {
-    return AjCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Aj.sosSoft, shape: BoxShape.circle),
-            child: Text('SOS', style: Aj.h(12.5, color: Aj.sos, w: FontWeight.w800)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Butuh Bantuan Mendesak?', style: Aj.h(13.5)),
-                Text('Kirim sinyal SOS ke semua guardian & 112', style: Aj.b(12, color: Aj.muted, height: 1.25)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: onOpenEmergency ?? () => showDialog<void>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                title: Text('Kirim SOS sekarang?', style: Aj.h(17)),
-                content: Text('Lokasi live Anda akan dikirim ke semua guardian dan 112.', style: Aj.b(13.5, color: Aj.muted)),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal', style: Aj.b(14, color: Aj.muted, w: FontWeight.w800))),
-                  FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: Aj.sos),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ajSnack(context, 'SOS terkirim ke semua guardian & 112 (simulasi)', icon: Icons.sos_rounded);
-                    },
-                    child: Text('Kirim SOS', style: Aj.b(14, color: Colors.white, w: FontWeight.w800)),
-                  ),
-                ],
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: Aj.sos,
-              minimumSize: const Size(72, 46),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: Text('SOS', style: Aj.h(13.5, color: Colors.white, w: FontWeight.w800)),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────
 // MODE 2 — SAYA BERJALAN
@@ -1038,8 +976,6 @@ class _WalkingViewState extends State<_WalkingView> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              SosHoldCard(onTrigger: widget.onOpenEmergency),
             ],
           ),
         );
