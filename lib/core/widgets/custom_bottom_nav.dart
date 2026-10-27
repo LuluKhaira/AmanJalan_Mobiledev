@@ -18,7 +18,7 @@ class CustomBottomNav extends StatelessWidget {
     final items = [
       {'icon': Icons.home_rounded, 'label': 'Beranda'},
       {'icon': Icons.explore_rounded, 'label': 'Peta'},
-      {'icon': Icons.history_rounded, 'label': 'Riwayat'},
+      {'icon': Icons.directions_walk_rounded, 'label': 'Perjalanan'},
       {'icon': Icons.shield_rounded, 'label': 'Profil'},
     ];
 
