@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
+import 'package:amanjalan/core/widgets/app_header.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
+import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 
 /// PERJALANAN — dua mode: "Saya Memantau" & "Saya Berjalan".
 class PerjalananTab extends StatefulWidget {
@@ -30,7 +32,7 @@ class _PerjalananTabState extends State<PerjalananTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SafeArea(bottom: false, child: AjHeader(subtitle: 'Beranda', onProfileTap: widget.onProfileTap)),
+          AppHeader(onProfileTap: widget.onProfileTap),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: _ModeToggle(value: _mode, onChanged: (v) => setState(() => _mode = v)),
@@ -1003,26 +1005,38 @@ class _WalkingViewState extends State<_WalkingView> {
               const SizedBox(height: 22),
 
               // Guardian yang mengawasi
-              AjCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
+              ValueListenableBuilder<List<Guardian>>(
+                valueListenable: GuardianStore.guardians,
+                builder: (context, guardians, _) {
+                  final onlineCount = guardians.where((g) => g.online).length;
+                  return AjCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
                       children: [
-                        Expanded(child: Text('Guardian yang\nMengawasi', style: Aj.h(16, height: 1.25))),
-                        const AjPill('2 Online', bg: Aj.blushDeep, fg: Aj.berry, size: 11),
-                        const SizedBox(width: 6),
-                        TextButton.icon(
-                          onPressed: () => ajSnack(context, 'Pilih kontak untuk ditambahkan (simulasi)', icon: Icons.person_add_alt_1_rounded),
-                          icon: const Icon(Icons.person_add_alt_1_outlined, size: 16, color: Aj.berry),
-                          label: Text('Tambah', style: Aj.b(13, color: Aj.berry, w: FontWeight.w800)),
+                        Row(
+                          children: [
+                            Expanded(child: Text('Guardian yang\nMengawasi', style: Aj.h(16, height: 1.25))),
+                            AjPill('$onlineCount Online', bg: Aj.blushDeep, fg: Aj.berry, size: 11),
+                            const SizedBox(width: 6),
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const TambahGuardianScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.person_add_alt_1_outlined, size: 16, color: Aj.berry),
+                              label: Text('Tambah', style: Aj.b(13, color: Aj.berry, w: FontWeight.w800)),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 8),
+                        for (final g in guardians) _GuardianRow(g),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    for (final g in kGuardians.take(2)) _GuardianRow(g),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               SosHoldCard(onTrigger: widget.onOpenEmergency),

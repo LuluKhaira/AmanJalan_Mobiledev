@@ -124,6 +124,24 @@ const List<Guardian> kGuardians = [
   ),
 ];
 
+/// Penyimpanan sementara di memori: daftar guardian.
+class GuardianStore {
+  GuardianStore._();
+  static final ValueNotifier<List<Guardian>> guardians =
+      ValueNotifier<List<Guardian>>([...kGuardians]);
+
+  static void addGuardian(Guardian g) {
+    guardians.value = [...guardians.value, g];
+  }
+
+  static void removeGuardian(int index) {
+    if (index >= 0 && index < guardians.value.length) {
+      final list = [...guardians.value]..removeAt(index);
+      guardians.value = list;
+    }
+  }
+}
+
 /// Penyimpanan sementara di memori: riwayat + perjalanan yang sedang aktif.
 class TripStore {
   TripStore._();

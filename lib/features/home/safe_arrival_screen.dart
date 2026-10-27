@@ -20,8 +20,8 @@ class SafeArrivalScreen extends StatelessWidget {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCEBDD), // Sage Green
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDCEBDD), // Sage Green
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.check_rounded, size: 50, color: Colors.green),

@@ -14,8 +14,8 @@ import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
 import 'package:amanjalan/features/home/perjalanan_tab.dart';
 import 'package:amanjalan/features/home/profile_tab.dart';
-// Import file sheet milikmu di sini
-import 'package:amanjalan/features/home/widgets/add_guardian_sheet.dart';
+import 'package:amanjalan/features/home/aj_data.dart';
+import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 
 const _sosRed = Color(0xFF8E1B1B);
 const _sosBadge = Color(0xFFF7D6D9);
@@ -64,23 +64,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // List Guardian
   final List<_Guardian> _guardiansList = [
-    _Guardian(
+    const _Guardian(
       name: 'Mama',
       relation: 'Ibu',
       phone: '+62 812-3456-7890',
-      color: const Color(0xFFF4E6F0),
+      color: Color(0xFFF4E6F0),
     ),
-    _Guardian(
+    const _Guardian(
       name: 'Nadia',
       relation: 'Sahabat',
       phone: '+62 813-1111-2222',
-      color: const Color(0xFFE6F0F4),
+      color: Color(0xFFE6F0F4),
     ),
-    _Guardian(
+    const _Guardian(
       name: 'Kakak',
       relation: 'Keluarga',
       phone: '+62 857-3333-4444',
-      color: const Color(0xFFF0F4E6),
+      color: Color(0xFFF0F4E6),
     ),
   ];
 
@@ -180,52 +180,30 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Memanggil file AddGuardianSheet milikmu
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TambahGuardianScreen(
+          onGuardianAdded: () {
+            setState(() {
+              if (GuardianStore.guardians.value.isNotEmpty) {
+                final last = GuardianStore.guardians.value.last;
+                _guardiansList.add(
+                  _Guardian(
+                    name: last.name,
+                    relation: last.role,
+                    phone: '+62 812-3456-7890',
+                    color: const Color(0xFFFBE8F0),
+                  ),
+                );
+              }
+            });
+          },
+        ),
       ),
-      builder: (context) {
-        return AddGuardianSheet(
-          onAddFromContact: () {
-            Navigator.pop(context);
-            _simulateAddGuardian('Budi', 'Kontak');
-          },
-          onShareLink: () {
-            Navigator.pop(context);
-            _simulateAddGuardian('Siti', 'Menunggu');
-          },
-        );
-      },
     );
   }
 
-  void _simulateAddGuardian(String name, String relation) {
-    setState(() {
-      _guardiansList.add(
-        _Guardian(
-          name: name,
-          relation: relation, 
-          phone: '-',
-          color: const Color(0xFFE6F0F4), 
-        ),
-      );
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.plum,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Undangan berhasil dikirim ke $name!',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
+
 
   // ---------- Build ----------
   @override
@@ -239,8 +217,10 @@ class _HomeScreenState extends State<HomeScreen> {
             index: _currentIndex,
             children: [
               _buildBerandaTab(),
-              // PERHATIKAN: MapTab kita panggil di sini
-              MapTab(onBackToHome: () => _goToTab(0)),
+              MapTab(
+                onBackToHome: () => _goToTab(0),
+                onProfileTap: () => _goToTab(3),
+              ),
               PerjalananTab(
                 onOpenEmergency: _openEmergency,
                 onOpenMap: () => _goToTab(1),

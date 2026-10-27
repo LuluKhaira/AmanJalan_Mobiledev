@@ -97,7 +97,9 @@ const _fastPois = [
 class MapTab extends StatefulWidget {
   final VoidCallback? onBackToHome;
 
-  const MapTab({super.key, this.onBackToHome});
+  final VoidCallback? onProfileTap;
+
+  const MapTab({super.key, this.onBackToHome, this.onProfileTap});
 
   @override
   State<MapTab> createState() => _MapTabState();
@@ -349,7 +351,7 @@ class _MapTabState extends State<MapTab> with TickerProviderStateMixin {
                   child: SafeArea(
                     bottom: false,
                     child: AppHeader(
-                      onProfileTap: () {},
+                      onProfileTap: widget.onProfileTap,
                     ),
                   ),
                 ),
