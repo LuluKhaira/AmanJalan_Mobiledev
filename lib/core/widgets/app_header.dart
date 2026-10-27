@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
+import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/notification/notification_screen.dart';
 
 class AppHeader extends StatelessWidget {
@@ -20,15 +21,7 @@ class AppHeader extends StatelessWidget {
       child: Row(
         children: [
           // Logo Kiri
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.softPink,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.location_on_rounded, color: AppColors.plum, size: 26),
-          ),
+          const AppLogo(size: 44),
           const SizedBox(width: 12),
 
           // Teks

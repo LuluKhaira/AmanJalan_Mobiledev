@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
+import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
+import 'package:amanjalan/features/notification/notification_screen.dart';
 
 void ajSnack(BuildContext context, String msg, {IconData icon = Icons.check_circle_rounded}) {
   final m = ScaffoldMessenger.of(context);
@@ -28,7 +31,16 @@ void ajSnack(BuildContext context, String msg, {IconData icon = Icons.check_circ
 class AjHeader extends StatelessWidget {
   final String subtitle;
   final VoidCallback? onProfileTap;
-  const AjHeader({super.key, required this.subtitle, this.onProfileTap});
+  final VoidCallback? onNotificationTap;
+  final String? avatarUrl;
+
+  const AjHeader({
+    super.key,
+    required this.subtitle,
+    this.onProfileTap,
+    this.onNotificationTap,
+    this.avatarUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +48,7 @@ class AjHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(color: Aj.blush, shape: BoxShape.circle),
-            child: const Icon(Icons.shield_rounded, color: Aj.plum, size: 22),
-          ),
+          const AppLogo(size: 42),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -54,7 +61,14 @@ class AjHeader extends StatelessWidget {
           ),
           InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () => ajSnack(context, 'Tidak ada notifikasi baru', icon: Icons.notifications_none_rounded),
+            onTap: onNotificationTap ??
+                () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationScreen(),
+                    ),
+                  );
+                },
             child: const Padding(
               padding: EdgeInsets.all(8),
               child: Icon(Icons.notifications_none_rounded, color: Aj.plum, size: 26),
@@ -63,7 +77,12 @@ class AjHeader extends StatelessWidget {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onProfileTap,
-            child: const AjAvatar(name: 'Anindya Putri', size: 38, color: Aj.blushDeep),
+            child: AjAvatar(
+              name: 'Anindya Putri',
+              size: 38,
+              color: Aj.blushDeep,
+              imageUrl: avatarUrl ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            ),
           ),
         ],
       ),
@@ -148,8 +167,18 @@ class AjAvatar extends StatelessWidget {
   final double size;
   final Color color;
   final bool? online;
+  final String? imageUrl;
+  final bool? checkmark;
 
-  const AjAvatar({super.key, required this.name, this.size = 44, this.color = Aj.blush, this.online});
+  const AjAvatar({
+    super.key,
+    required this.name,
+    this.size = 44,
+    this.color = Aj.blush,
+    this.online,
+    this.imageUrl,
+    this.checkmark,
+  });
 
   String get _initials {
     final p = name.trim().split(RegExp(r'\s+'));
@@ -165,18 +194,53 @@ class AjAvatar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          ClipOval(
+            child: imageUrl != null && imageUrl!.isNotEmpty
+                ? Image.network(
+                    imageUrl!,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: size,
+                      height: size,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                      child: Text(_initials, style: Aj.h(size * 0.34, color: Aj.plum)),
+                    ),
+                  )
+                : Container(
+                    width: size,
+                    height: size,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    child: Text(_initials, style: Aj.h(size * 0.34, color: Aj.plum)),
+                  ),
+          ),
           Container(
             width: size,
             height: size,
-            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: color,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
             ),
-            child: Text(_initials, style: Aj.h(size * 0.34, color: Aj.plum)),
           ),
-          if (online != null)
+          if (checkmark == true)
+            Positioned(
+              right: -1,
+              bottom: -1,
+              child: Container(
+                width: size * 0.34,
+                height: size * 0.34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F6B45),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Icon(Icons.check, size: size * 0.22, color: Colors.white),
+              ),
+            )
+          else if (online != null)
             Positioned(
               right: -1,
               bottom: -1,
@@ -529,65 +593,128 @@ class _SosHoldCardState extends State<SosHoldCard> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFC62828), Color(0xFF9F1717)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [BoxShadow(color: Color(0x40B71C1C), blurRadius: 18, offset: Offset(0, 8))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Aj.sosSoft, shape: BoxShape.circle),
-            child: Text('SOS', style: Aj.h(14, color: Aj.sos, w: FontWeight.w800)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Tekan SOS Mendesak', style: Aj.h(15, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text('Kirim sinyal darurat ke 2 Guardian & Hotline 112', style: Aj.b(12, color: const Color(0xDDFFFFFF), height: 1.25)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTapDown: (_) => _c.forward(),
-            onTapUp: (_) => _c.reverse(),
-            onTapCancel: () => _c.reverse(),
-            child: AnimatedBuilder(
-              animation: _c,
-              builder: (_, __) {
-                final secs = (3 - (_c.value * 3)).ceil().clamp(1, 3);
-                return Container(
-                  width: 86,
-                  height: 56,
-                  decoration: BoxDecoration(color: const Color(0x2EFFFFFF), borderRadius: BorderRadius.circular(18)),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(widthFactor: _c.value, child: Container(color: const Color(0x66FFFFFF))),
-                      ),
-                      Text(
-                        _c.value == 0 ? 'TAHAN\n3 DTIK' : 'LEPAS\n$secs…',
-                        textAlign: TextAlign.center,
-                        style: Aj.b(11.5, color: Colors.white, w: FontWeight.w800, height: 1.25),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+        color: const Color(0xFF8E1B1B),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8E1B1B).withAlpha(70),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -15,
+              top: -15,
+              bottom: -15,
+              child: Container(
+                width: 120,
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(22),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(color: Color(0xFFF7D6D9), shape: BoxShape.circle),
+                    child: Text(
+                      'SOS',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF8E1B1B),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tekan SOS\nMendesak',
+                          style: GoogleFonts.merriweather(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Kirim sinyal darurat ke 2 Guardian\n& Hotline 112',
+                          style: GoogleFonts.nunito(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFE8BDC2),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTapDown: (_) => _c.forward(),
+                    onTapUp: (_) => _c.reverse(),
+                    onTapCancel: () => _c.reverse(),
+                    child: AnimatedBuilder(
+                      animation: _c,
+                      builder: (_, __) {
+                        final secs = (3 - (_c.value * 3)).ceil().clamp(1, 3);
+                        return Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(48),
+                            shape: BoxShape.circle,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: FractionallySizedBox(
+                                  heightFactor: _c.value,
+                                  widthFactor: 1.0,
+                                  child: Container(color: const Color(0x55FFFFFF)),
+                                ),
+                              ),
+                              Text(
+                                _c.value == 0 ? 'TAHAN 3\nDTIK' : 'LEPAS\n$secs…',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.merriweather(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFF3D5D9),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

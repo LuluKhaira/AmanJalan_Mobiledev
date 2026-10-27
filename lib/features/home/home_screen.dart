@@ -10,8 +10,8 @@ import 'package:amanjalan/core/widgets/custom_bottom_nav.dart';
 import 'package:amanjalan/core/widgets/app_header.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/emergency/emergency_screen.dart';
-import 'package:amanjalan/features/home/history_tab.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
+import 'package:amanjalan/features/home/perjalanan_tab.dart';
 import 'package:amanjalan/features/home/profile_tab.dart';
 
 const _sosRed = Color(0xFF8E1B1B);
@@ -162,7 +162,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildBerandaTab(),
               MapTab(onBackToHome: () => _goToTab(0)),
-              const HistoryTab(),
+              PerjalananTab(
+                onOpenEmergency: _openEmergency,
+                onOpenMap: () => _goToTab(1),
+                onProfileTap: () => _goToTab(3),
+              ),
               ProfileTab(onLogout: _logout),
             ],
           ),

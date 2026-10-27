@@ -30,7 +30,7 @@ class _PerjalananTabState extends State<PerjalananTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SafeArea(bottom: false, child: AjHeader(subtitle: 'Perjalanan', onProfileTap: widget.onProfileTap)),
+          SafeArea(bottom: false, child: AjHeader(subtitle: 'Beranda', onProfileTap: widget.onProfileTap)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: _ModeToggle(value: _mode, onChanged: (v) => setState(() => _mode = v)),
@@ -186,9 +186,9 @@ class _MonitoringView extends StatelessWidget {
           const SizedBox(height: 22),
 
           // Lingkar pantau
-          AjSectionTitle(
+          const AjSectionTitle(
             'Lingkar Pantau Saya',
-            trailing: const _LiveUpdate(),
+            trailing: _LiveUpdate(),
           ),
           const _FriendTrackCard(),
           const SizedBox(height: 14),
@@ -367,7 +367,13 @@ class _FriendTrackCardState extends State<_FriendTrackCard> {
         children: [
           Row(
             children: [
-              const AjAvatar(name: 'Salsabila Rahma', size: 52, online: true, color: Color(0xFFF0F4E6)),
+              const AjAvatar(
+                name: 'Salsabila Rahma',
+                size: 52,
+                online: true,
+                color: Color(0xFFF0F4E6),
+                imageUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -499,7 +505,14 @@ class _MotherCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const AjAvatar(name: 'Ibu Nurhayati', size: 48, online: true, color: Color(0xFFF4E6F0)),
+              const AjAvatar(
+                name: 'Ibu Nurhayati',
+                size: 48,
+                online: true,
+                checkmark: true,
+                color: Color(0xFFF4E6F0),
+                imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -615,7 +628,7 @@ class _TukarProteksiCard extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => AjSheet(title: 'QR Saling Pantau', child: const AjQrBox()),
+      builder: (_) => const AjSheet(title: 'QR Saling Pantau', child: AjQrBox()),
     );
   }
 }
@@ -857,7 +870,7 @@ class _WalkingViewState extends State<_WalkingView> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              RouteMap(height: 110, progress: 0.0),
+                              const RouteMap(height: 110, progress: 0.0),
                               const SizedBox(height: 10),
                               Container(
                                 padding: const EdgeInsets.all(10),
@@ -969,7 +982,7 @@ class _WalkingViewState extends State<_WalkingView> {
                       icon: Icons.phone_in_talk_outlined,
                       iconBg: Aj.blush,
                       iconFg: Aj.berry,
-                      title: 'Pura-pura Telp',
+                      title: 'Pura-pura Telep',
                       sub: 'Suara Ayah / Teman',
                       onTap: () => _fakeCall(context),
                     ),
@@ -1150,7 +1163,7 @@ class _GuardianRow extends StatelessWidget {
       decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(18)),
       child: Row(
         children: [
-          AjAvatar(name: g.name, size: 44, online: g.online, color: g.color),
+          AjAvatar(name: g.name, size: 44, online: g.online, color: g.color, imageUrl: g.imageUrl),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

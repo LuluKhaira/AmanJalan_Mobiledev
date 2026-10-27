@@ -78,6 +78,7 @@ class Guardian {
   final String note;
   final bool online;
   final Color color;
+  final String? imageUrl;
 
   const Guardian({
     required this.name,
@@ -85,6 +86,7 @@ class Guardian {
     required this.note,
     required this.online,
     required this.color,
+    this.imageUrl,
   });
 }
 
@@ -96,9 +98,30 @@ const List<Destination> kDestinations = [
 ];
 
 const List<Guardian> kGuardians = [
-  Guardian(name: 'Ibu Nurhayati', role: 'Wali Utama', note: 'WhatsApp Realtime Aktif', online: true, color: Color(0xFFF4E6F0)),
-  Guardian(name: 'Dinda Kirana', role: 'Teman Kos', note: 'Notifikasi Cepat Siap', online: true, color: Color(0xFFE6F0F4)),
-  Guardian(name: 'Salsabila Rahma', role: 'Sahabat', note: 'Radius Kampus UI Depok', online: false, color: Color(0xFFF0F4E6)),
+  Guardian(
+    name: 'Ibu Nurhayati',
+    role: 'Wali Utama',
+    note: 'WhatsApp Realtime Aktif',
+    online: true,
+    color: Color(0xFFF4E6F0),
+    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+  ),
+  Guardian(
+    name: 'Dinda Permata',
+    role: 'Teman Sekos',
+    note: 'Notifikasi Cepat Siap',
+    online: true,
+    color: Color(0xFFE6F0F4),
+    imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+  ),
+  Guardian(
+    name: 'Salsabila Rahma',
+    role: 'Sahabat',
+    note: 'Radius Kampus UI Depok',
+    online: false,
+    color: Color(0xFFF0F4E6),
+    imageUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
+  ),
 ];
 
 /// Penyimpanan sementara di memori: riwayat + perjalanan yang sedang aktif.

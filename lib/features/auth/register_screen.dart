@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:amanjalan/core/theme/app_colors.dart';
+import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/auth/otp_screen.dart';
 
@@ -246,24 +247,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   // ---------- Bagian layar ----------
   Widget _buildLogo() {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: AppColors.softPink,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.shield_outlined, size: 30, color: AppColors.plum),
-          Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(Icons.person, size: 12, color: AppColors.plum),
-          ),
-        ],
-      ),
-    );
+    return const AppLogo(size: 56);
   }
 
   Widget _buildHeading() {

@@ -16,10 +16,10 @@ class CustomBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     // Daftar ikon dan label untuk 4 tombol
     final items = [
-      {'icon': Icons.home_rounded, 'label': 'Beranda'},
-      {'icon': Icons.explore_rounded, 'label': 'Peta'},
+      {'icon': Icons.home_outlined, 'label': 'Beranda'},
+      {'icon': Icons.shield_outlined, 'label': 'Proteksi'},
       {'icon': Icons.directions_walk_rounded, 'label': 'Perjalanan'},
-      {'icon': Icons.shield_rounded, 'label': 'Profil'},
+      {'icon': Icons.person_outline_rounded, 'label': 'Profil'},
     ];
 
     return Container(
@@ -32,7 +32,7 @@ class CustomBottomNav extends StatelessWidget {
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textDark.withOpacity(0.08),
+              color: AppColors.textDark.withAlpha(20),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),

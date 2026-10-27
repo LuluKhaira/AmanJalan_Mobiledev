@@ -208,7 +208,7 @@ class _MapTabState extends State<MapTab> {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.softPink.withOpacity(0.3) : Colors.white,
+          color: isSelected ? AppColors.softPink.withAlpha(77) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.plum : const Color(0xFFF0EDF2),

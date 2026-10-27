@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/services/auth_service.dart';
 import 'package:amanjalan/core/widgets/animated_entrance.dart';
+import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/core/widgets/press_scale.dart';
 import 'package:amanjalan/features/auth/register_screen.dart';
 import 'package:amanjalan/features/home/home_screen.dart';
@@ -189,17 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLogo() {
-    return Container(
-      width: 52, height: 52,
-      decoration: BoxDecoration(color: AppColors.softPink, borderRadius: BorderRadius.circular(16)),
-      child: const Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.shield_outlined, size: 30, color: AppColors.plum),
-          Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.person, size: 12, color: AppColors.plum)),
-        ],
-      ),
-    );
+    return const AppLogo(size: 56);
   }
 
   Widget _buildHeading() {

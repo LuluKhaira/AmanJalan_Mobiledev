@@ -81,8 +81,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.95),
-                    Colors.white.withOpacity(0.0),
+                    Colors.white.withAlpha(242),
+                    Colors.transparent,
                   ],
                 ),
               ),
@@ -167,11 +167,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   // Progress Bar
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
+                    child: const LinearProgressIndicator(
                       value: 0.75, // Statis di 75% untuk demo
                       minHeight: 8,
-                      backgroundColor: const Color(0xFFF0EDF2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.plum),
+                      backgroundColor: Color(0xFFF0EDF2),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.plum),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -340,7 +340,7 @@ class _ActiveMapPainter extends CustomPainter {
 
     // Titik Posisi User
     final pinPaint = Paint()..color = AppColors.plum;
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.8), 24, Paint()..color = AppColors.plum.withOpacity(0.2));
+    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.8), 24, Paint()..color = AppColors.plum.withAlpha(51));
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.8), 12, pinPaint);
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.8), 5, Paint()..color = Colors.white);
   }

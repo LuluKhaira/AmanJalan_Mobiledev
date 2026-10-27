@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/services/auth_service.dart';
+import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/home/home_screen.dart';
 
@@ -187,6 +188,7 @@ class _LogoBadge extends StatelessWidget {
     return Container(
       width: 112,
       height: 112,
+      padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
@@ -196,16 +198,7 @@ class _LogoBadge extends StatelessWidget {
           BoxShadow(color: Color(0x40E7C6F0), blurRadius: 40, spreadRadius: 6),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: const [
-          Icon(Icons.shield_outlined, size: 58, color: Colors.white),
-          Padding(
-            padding: EdgeInsets.only(top: 4),
-            child: Icon(Icons.person, size: 26, color: Colors.white),
-          ),
-        ],
-      ),
+      child: const AppLogo(size: 88),
     );
   }
 }
