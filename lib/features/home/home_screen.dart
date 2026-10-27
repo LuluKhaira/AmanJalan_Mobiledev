@@ -10,12 +10,22 @@ import 'package:amanjalan/core/widgets/custom_bottom_nav.dart';
 import 'package:amanjalan/core/widgets/app_header.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/emergency/emergency_screen.dart';
+import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
 import 'package:amanjalan/features/home/perjalanan_tab.dart';
 import 'package:amanjalan/features/home/profile_tab.dart';
+// Import file sheet milikmu di sini
+import 'package:amanjalan/features/home/widgets/add_guardian_sheet.dart';
 
 const _sosRed = Color(0xFF8E1B1B);
 const _sosBadge = Color(0xFFF7D6D9);
+
+// Kartu Fake Call
+const _fakeBg = Color(0xFFFFD9E2);
+const _fakeIcon = Color(0xFF8B4A5E);
+const _fakeChip = Color(0xFFF2BFCB);
+const _fakeText = Color(0xFF3E1424);
+const _fakeSub = Color(0xFF6B4A55);
 
 class _Guardian {
   final String name;
@@ -52,24 +62,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _TravelMode(Icons.directions_bus_rounded, 'Transport'),
   ];
 
-  static const _guardians = [
+  // List Guardian
+  final List<_Guardian> _guardiansList = [
     _Guardian(
       name: 'Mama',
       relation: 'Ibu',
       phone: '+62 812-3456-7890',
-      color: Color(0xFFF4E6F0),
+      color: const Color(0xFFF4E6F0),
     ),
     _Guardian(
       name: 'Nadia',
       relation: 'Sahabat',
       phone: '+62 813-1111-2222',
-      color: Color(0xFFE6F0F4),
+      color: const Color(0xFFE6F0F4),
     ),
     _Guardian(
       name: 'Kakak',
       relation: 'Keluarga',
       phone: '+62 857-3333-4444',
-      color: Color(0xFFF0F4E6),
+      color: const Color(0xFFF0F4E6),
     ),
   ];
 
@@ -78,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _name = 'Pengguna';
   int _currentIndex = 0;
   int _modeIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
+
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
@@ -104,10 +117,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<EmergencyRecipient> get _emergencyRecipients {
     return [
-      if (_guardians.isNotEmpty)
+      if (_guardiansList.isNotEmpty)
         EmergencyRecipient(
-          '${_guardians.first.relation} (Kontak Utama)',
-          _guardians.first.phone,
+          '${_guardiansList.first.relation} (Kontak Utama)',
+          _guardiansList.first.phone,
         ),
       const EmergencyRecipient('Layanan Polisi Terpadu', 'Panggilan 110'),
     ];
@@ -123,6 +136,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openFakeCall() {
+    HapticFeedback.mediumImpact();
+    final caller = _guardiansList.isNotEmpty ? _guardiansList.first : null;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => FakeCallScreen(
+          callerName: caller?.name ?? 'Mama',
+          guardianCount: _guardiansList.length,
+          emergencyRecipients: _emergencyRecipients,
+        ),
+      ),
+    );
+  }
+
   void _selectMode(int index) {
     if (index == _modeIndex) return;
     HapticFeedback.selectionClick();
@@ -131,18 +159,68 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goToTab(int index) => setState(() => _currentIndex = index);
 
+  // ==========================================
+  // FITUR KELOLA & TAMBAH GUARDIAN
+  // ==========================================
   void _openGuardianManager() {
     HapticFeedback.selectionClick();
-    // TODO: buka halaman Atur Guardian (daftar, tambah, hapus, status undangan)
+    
+    if (_guardiansList.length >= _maxGuardians) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.plum,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Text(
+            'Guardian sudah mencapai batas maksimal $_maxGuardians orang.',
+            style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Memanggil file AddGuardianSheet milikmu
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return AddGuardianSheet(
+          onAddFromContact: () {
+            Navigator.pop(context);
+            _simulateAddGuardian('Budi', 'Kontak');
+          },
+          onShareLink: () {
+            Navigator.pop(context);
+            _simulateAddGuardian('Siti', 'Menunggu');
+          },
+        );
+      },
+    );
+  }
+
+  void _simulateAddGuardian(String name, String relation) {
+    setState(() {
+      _guardiansList.add(
+        _Guardian(
+          name: name,
+          relation: relation, 
+          phone: '-',
+          color: const Color(0xFFE6F0F4), 
+        ),
+      );
+    });
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.plum,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Text(
-          _guardians.length >= _maxGuardians
-              ? 'Guardian sudah mencapai batas $_maxGuardians orang.'
-              : 'Halaman Atur Guardian segera hadir.',
+          'Undangan berhasil dikirim ke $name!',
           style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
         ),
       ),
@@ -161,6 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
             index: _currentIndex,
             children: [
               _buildBerandaTab(),
+              // PERHATIKAN: MapTab kita panggil di sini
               MapTab(onBackToHome: () => _goToTab(0)),
               PerjalananTab(
                 onOpenEmergency: _openEmergency,
@@ -213,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 AnimatedEntrance(index: 5, child: _buildGuardianList()),
                 const SizedBox(height: 32),
-                AnimatedEntrance(index: 6, child: _buildSosCard()),
+                AnimatedEntrance(index: 6, child: _buildQuickActions()),
               ],
             ),
           ),
@@ -231,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
 
-  // ---------- Kartu utama (cari tujuan + mulai) ----------
+  // ---------- Kartu utama (Status & Mulai) ----------
   Widget _buildHeroCard() {
     return Container(
       width: double.infinity,
@@ -261,40 +340,100 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Kolom pencarian: ketuk untuk membuka peta dan memilih tujuan
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => _goToTab(1),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+          // Status Keamanan & Guardian
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(25), 
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withAlpha(50),
+                width: 1,
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search_rounded,
-                      color: AppColors.textMuted, size: 22),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Cari lokasi atau tujuan...',
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      color: AppColors.textMuted,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.shield_rounded,
+                  color: AppColors.softPink,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Status: Kamu Aman Saat Ini',
+                        style: GoogleFonts.nunito(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _guardiansList.isNotEmpty
+                            ? '${_guardiansList.length} Guardian siap memantau'
+                            : 'Belum ada Guardian terhubung',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          color: Colors.white.withAlpha(200),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_guardiansList.isNotEmpty)
+                  SizedBox(
+                    width: 60,
+                    height: 30,
+                    child: Stack(
+                      children: [
+                        for (int i = 0; i < _guardiansList.length; i++)
+                          if (i < 3) 
+                            Positioned(
+                              right: i * 16.0,
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: _guardiansList[i].color,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.plum,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _guardiansList[i].name.isNotEmpty 
+                                        ? _guardiansList[i].name.substring(0, 1).toUpperCase()
+                                        : '?',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
 
+          // Tombol Mulai
           PressScale(
             child: SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () => _goToTab(1),
+                onPressed: () => _goToTab(1), // Pindah ke MapTab
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.plum,
@@ -412,11 +551,11 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final g in _guardians) ...[
+          for (final g in _guardiansList) ...[
             _buildGuardianAvatar(g),
             const SizedBox(width: 16),
           ],
-          if (_guardians.length < _maxGuardians) _buildAddGuardian(),
+          if (_guardiansList.length < _maxGuardians) _buildAddGuardian(),
         ],
       ),
     );
@@ -442,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Center(
             child: Text(
-              g.name.substring(0, 1).toUpperCase(),
+              g.name.isNotEmpty ? g.name.substring(0, 1).toUpperCase() : '?',
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -504,7 +643,94 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---------- Kartu SOS ----------
+  // ---------- Aksi cepat: Fake Call + SOS berdampingan ----------
+  Widget _buildQuickActions() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _buildFakeCallCard()),
+        const SizedBox(width: 12),
+        Expanded(child: _buildSosCard()),
+      ],
+    );
+  }
+
+  Widget _miniChip(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.nunito(
+          fontSize: 9.5,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.3,
+          color: fg,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFakeCallCard() {
+    return PressScale(
+      child: GestureDetector(
+        onTap: _openFakeCall,
+        child: Container(
+          width: double.infinity,
+          height: 134,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: _fakeBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _fakeIcon,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.phone_rounded,
+                        size: 22, color: Colors.white),
+                  ),
+                  _miniChip('1 TAP', _fakeChip, _fakeText),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                'FAKE CALL',
+                style: GoogleFonts.nunito(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: _fakeText,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Pura-pura telepon',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 12.5,
+                  color: _fakeSub,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSosCard() {
     return PressScale(
       child: GestureDetector(
@@ -512,6 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onLongPress: _openEmergency,
         child: Container(
           width: double.infinity,
+          height: 134,
           decoration: BoxDecoration(
             color: _sosRed,
             borderRadius: BorderRadius.circular(20),
@@ -527,96 +754,64 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                // Lingkaran dekoratif transparan di kanan belakang
                 Positioned(
-                  right: -15,
-                  top: -15,
-                  bottom: -15,
+                  right: -26,
+                  bottom: -26,
                   child: Container(
-                    width: 120,
+                    width: 96,
+                    height: 96,
                     decoration: BoxDecoration(
                       color: Colors.black.withAlpha(22),
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
-                // Konten Utama
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-                  child: Row(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Lingkaran SOS Kiri
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                          color: _sosBadge,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'SOS',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: _sosRed,
-                            letterSpacing: -0.5,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              color: _sosBadge,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.notifications_active_rounded,
+                              size: 22,
+                              color: _sosRed,
+                            ),
                           ),
+                          _miniChip(
+                            'TAHAN 3 DTK',
+                            Colors.black.withAlpha(48),
+                            const Color(0xFFF3D5D9),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        'SOS',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1.1,
                         ),
                       ),
-                      const SizedBox(width: 14),
-
-                      // Teks Tengah: Judul & Subtitle
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tekan SOS\nMendesak',
-                              style: GoogleFonts.merriweather(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                height: 1.25,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Badge Kanan: TAHAN 3 DTIK
-                      Container(
-                        width: 76,
-                        height: 76,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(48),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'TAHAN 3',
-                              style: GoogleFonts.merriweather(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFF3D5D9),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'DTIK',
-                              style: GoogleFonts.merriweather(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFF3D5D9),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 2),
+                      Text(
+                        'Bantuan Darurat',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 12.5,
+                          color: const Color(0xFFF3D5D9),
                         ),
                       ),
                     ],

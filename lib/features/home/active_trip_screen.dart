@@ -1,8 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/widgets/press_scale.dart';
+
+// Import layar tujuan
+import 'package:amanjalan/features/home/safe_arrival_screen.dart';
+import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
+import 'package:amanjalan/features/emergency/emergency_screen.dart';
 
 class ActiveTripScreen extends StatefulWidget {
   const ActiveTripScreen({super.key});
@@ -12,14 +18,12 @@ class ActiveTripScreen extends StatefulWidget {
 }
 
 class _ActiveTripScreenState extends State<ActiveTripScreen> {
-  // Timer untuk simulasi perjalanan
   Timer? _timer;
   int _secondsElapsed = 0;
 
   @override
   void initState() {
     super.initState();
-    // Simulasi waktu berjalan
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) setState(() => _secondsElapsed++);
     });
@@ -37,17 +41,51 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     return '$minutes Menit Lagi';
   }
 
+  // Fungsi Selesai Perjalanan -> Ke Layar Safe Arrival
   void _endTrip() {
     _timer?.cancel();
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.green,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Perjalanan Selesai. Guardian diberitahu bahwa kamu sudah sampai dengan aman!',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+    HapticFeedback.heavyImpact();
+    
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => const SafeArrivalScreen(),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  // Fungsi Buka Fake Call
+  void _openFakeCall() {
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const FakeCallScreen(
+          callerName: 'Mama',
+          guardianCount: 3,
+          emergencyRecipients: [
+            EmergencyRecipient('Ibu (Kontak Utama)', '+62 812-3456-7890'),
+            EmergencyRecipient('Layanan Polisi Terpadu', 'Panggilan 110'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Fungsi Buka SOS
+  void _openEmergency() {
+    HapticFeedback.heavyImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const EmergencyScreen(
+          recipients: [
+            EmergencyRecipient('Ibu (Kontak Utama)', '+62 812-3456-7890'),
+            EmergencyRecipient('Layanan Polisi Terpadu', 'Panggilan 110'),
+          ],
         ),
       ),
     );
@@ -56,7 +94,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F4F9), // Background agak ungu
+      backgroundColor: const Color(0xFFF7F4F9),
       body: Stack(
         children: [
           // ==========================================
@@ -168,7 +206,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: const LinearProgressIndicator(
-                      value: 0.75, // Statis di 75% untuk demo
+                      value: 0.75, 
                       minHeight: 8,
                       backgroundColor: Color(0xFFF0EDF2),
                       valueColor: AlwaysStoppedAnimation<Color>(AppColors.plum),
@@ -215,11 +253,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                           child: SizedBox(
                             height: 54,
                             child: ElevatedButton.icon(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Panggilan Palsu diaktifkan...')),
-                                );
-                              },
+                              onPressed: _openFakeCall, // <-- Mengarah ke Layar Fake Call
                               icon: const Icon(Icons.phone_in_talk_rounded, size: 20),
                               label: Text('Panggilan Palsu', style: GoogleFonts.nunito(fontWeight: FontWeight.w800)),
                               style: ElevatedButton.styleFrom(
@@ -238,11 +272,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                           child: SizedBox(
                             height: 54,
                             child: ElevatedButton.icon(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(backgroundColor: Colors.red, content: Text('SOS Darurat Dikirim!')),
-                                );
-                              },
+                              onPressed: _openEmergency, // <-- Mengarah ke Layar SOS
                               icon: const Icon(Icons.warning_rounded, size: 20),
                               label: Text('SOS DARURAT', style: GoogleFonts.nunito(fontWeight: FontWeight.w800)),
                               style: ElevatedButton.styleFrom(
@@ -264,7 +294,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     child: SizedBox(
                       width: double.infinity, height: 54,
                       child: ElevatedButton(
-                        onPressed: _endTrip,
+                        onPressed: _endTrip, // <-- Mengarah ke Layar Safe Arrival
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.plum,
                           foregroundColor: Colors.white,
