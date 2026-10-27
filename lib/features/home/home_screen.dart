@@ -13,7 +13,7 @@ import 'package:amanjalan/features/emergency/emergency_screen.dart';
 import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
 import 'package:amanjalan/features/home/perjalanan_tab.dart';
-import 'package:amanjalan/features/home/profile_tab.dart';
+import 'package:amanjalan/features/profile/screens/profile_tab.dart';
 // Import file sheet milikmu di sini
 import 'package:amanjalan/features/home/widgets/add_guardian_sheet.dart';
 

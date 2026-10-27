@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
-import 'package:amanjalan/features/home/trip_history_screen.dart';
+import 'package:amanjalan/features/profile/screens/screens.dart';
 
 /// PROFIL — mengikuti desain Figma "Profil Saya".
-/// Riwayat perjalanan sekarang ada di sini (bagian "Riwayat Perjalanan").
 class ProfileTab extends StatefulWidget {
   final VoidCallback onLogout;
 
@@ -17,14 +16,8 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  // Nilai pengaturan (dummy, disimpan di memori)
-  int _sensitivity = 1;
-  int _fakeCaller = 0;
-  int _siren = 0;
-
-  static const _sensLabels = ['Rendah (Siaga 5x Guncang)', 'Sedang (Siaga 3x Guncang Layar Mati)', 'Tinggi (Siaga 2x Guncang)'];
-  static const _callerLabels = ['Panggilan Samaran Ayah • Tunda 5 dtk', 'Panggilan Samaran Teman • Tunda 5 dtk', 'Panggilan Samaran Kak Rian • Tunda 10 dtk'];
-  static const _sirenLabels = ['Desibel Maksimal (110 dB) • Uji Bunyi', 'Desibel Sedang (90 dB) • Uji Bunyi', 'Senyap + Getar Kuat'];
+  void _push(BuildContext c, Widget w) =>
+      Navigator.of(c).push(MaterialPageRoute<void>(builder: (_) => w));
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +57,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 _readinessCard(),
                 const SizedBox(height: 16),
                 _guardianCard(context),
-                const SizedBox(height: 16),
-                _historyCard(context),
                 const SizedBox(height: 16),
                 _featuresCard(context),
                 const SizedBox(height: 16),
@@ -299,72 +290,6 @@ class _ProfileTabState extends State<ProfileTab> {
         _ => g.note,
       };
 
-  // ── RIWAYAT PERJALANAN (pindahan dari navbar) ─────────────
-  Widget _historyCard(BuildContext context) {
-    return ValueListenableBuilder<List<TripRecord>>(
-      valueListenable: TripStore.trips,
-      builder: (context, list, _) {
-        final done = list.where((t) => t.status == TripStatus.selesai).length;
-        final km = list.fold<int>(0, (a, t) => a + t.meters) / 1000;
-        return AjCard(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('RIWAYAT PERJALANAN', style: Aj.b(11.5, color: Aj.berry, w: FontWeight.w800)),
-                        const SizedBox(height: 2),
-                        Text('Jejak Jalan Amanmu', style: Aj.h(18, color: Aj.plum)),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen())),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('Lihat Semua', style: Aj.b(12.5, color: Aj.berry, w: FontWeight.w800)),
-                      const Icon(Icons.chevron_right_rounded, color: Aj.berry, size: 18),
-                    ]),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _hStat('${list.length}', 'Perjalanan'),
-                  const SizedBox(width: 10),
-                  _hStat(km.toStringAsFixed(1), 'Km total'),
-                  const SizedBox(width: 10),
-                  _hStat('${list.isEmpty ? 0 : done * 100 ~/ list.length}%', 'Tiba aman'),
-                ],
-              ),
-              const SizedBox(height: 14),
-              for (final t in list.take(3)) TripHistoryTile(t),
-              if (list.isEmpty) Text('Belum ada perjalanan', style: Aj.b(13, color: Aj.muted)),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _hStat(String v, String l) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(color: Aj.blush, borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            children: [
-              Text(v, style: Aj.h(18, color: Aj.plum)),
-              Text(l, style: Aj.b(11, color: Aj.berry, w: FontWeight.w700)),
-            ],
-          ),
-        ),
-      );
-
   // ── Fitur & pemicu ─────────────────────────────────────────
   Widget _featuresCard(BuildContext context) {
     return AjCard(
@@ -376,16 +301,15 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 2),
           Text('Fitur & Pemicu Darurat', style: Aj.h(18, color: Aj.plum)),
           const SizedBox(height: 8),
-          _tile(Icons.dialpad_rounded, 'PIN & Biometrik', 'PIN 6-digit & Sidik Jari untuk Batal SOS', () => ajSnack(context, 'PIN & biometrik terkonfigurasi', icon: Icons.fingerprint_rounded)),
-          _tile(Icons.vibration_rounded, 'Sensitivitas Sensor Guncang', _sensLabels[_sensitivity], () => _choose(context, 'Sensitivitas Sensor Guncang', _sensLabels, _sensitivity, (i) => setState(() => _sensitivity = i))),
-          _tile(Icons.phone_in_talk_outlined, 'Kustomisasi Fake Call', _callerLabels[_fakeCaller], () => _choose(context, 'Kustomisasi Fake Call', _callerLabels, _fakeCaller, (i) => setState(() => _fakeCaller = i))),
-          _tile(Icons.volume_up_outlined, 'Sirene & Audio Peringatan', _sirenLabels[_siren], () => _choose(context, 'Sirene & Audio Peringatan', _sirenLabels, _siren, (i) => setState(() => _siren = i))),
-          _tile(Icons.location_on_outlined, 'Zona Aman Geofence', 'Kos Melati, Rumah Bandung, Kampus UI', () => ajSnack(context, '3 zona aman aktif', icon: Icons.location_on_outlined), last: true),
+          _tile(Icons.vibration_rounded, 'Sensitivitas Sensor Guncang', 'Sedang (Siaga 3x Guncang Layar Mati)', () => _push(context, const ShakeSensorScreen())),
+          _tile(Icons.phone_in_talk_outlined, 'Kustomisasi Fake Call', 'Panggilan Samaran Ayah • Tunda 5 dtk', () => _push(context, const FakeCallSettingsScreen())),
+          _tile(Icons.volume_up_outlined, 'Sirene & Audio Peringatan', 'Desibel Maksimal (110 dB) • Uji Bunyi', () => _push(context, const SirenAudioScreen()), last: true),
         ],
       ),
     );
   }
 
+  // ── Kredensial & medis ─────────────────────────────────────
   Widget _credentialCard(BuildContext context) {
     return AjCard(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
@@ -396,11 +320,9 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 2),
           Text('Informasi Pribadi & Bantuan', style: Aj.h(18, color: Aj.plum)),
           const SizedBox(height: 8),
-          _tile(Icons.medical_services_outlined, 'Data Medis Darurat', 'Alergi Penisilin • Penanganan Khusus', () => ajSnack(context, 'Data medis hanya terlihat saat SOS aktif', icon: Icons.medical_information_outlined),
-              tag: 'O+', iconBg: Aj.blush, iconFg: Aj.sos),
-          _tile(Icons.lock_outline_rounded, 'Privasi & Enkripsi Riwayat', 'Enkripsi E2E • Hapus Otomatis 30 Hari', () => ajSnack(context, 'Riwayat dienkripsi ujung-ke-ujung', icon: Icons.lock_outline_rounded)),
+          _tile(Icons.lock_outline_rounded, 'Privasi & Enkripsi Riwayat', 'Enkripsi E2E • Hapus Otomatis 30 Hari', () => _push(context, const PrivacyScreen())),
           _tile(Icons.headset_mic_outlined, 'Pusat Bantuan & Layanan 24 Jam', 'Hubungi Tim Hotline Darurat amanJalan', () => ajSnack(context, 'Menghubungkan ke hotline…', icon: Icons.headset_mic_outlined)),
-          _tile(Icons.info_outline_rounded, 'Versi Aplikasi', 'amanJalan v2.4.1 (Build Siaga Stabil)', () => ajSnack(context, 'Anda memakai versi terbaru', icon: Icons.verified_outlined), trailingText: 'Terbaru', last: true),
+          _tile(Icons.info_outline_rounded, 'Versi Aplikasi', 'amanJalan v2.4.1 (Build Siaga Stabil)', () => _push(context, const AppVersionScreen()), trailingText: 'Terbaru', last: true),
         ],
       ),
     );
@@ -450,44 +372,6 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
         if (!last) const Divider(height: 1, color: Aj.line),
       ],
-    );
-  }
-
-  void _choose(BuildContext context, String title, List<String> options, int current, ValueChanged<int> onPick) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AjSheet(
-        title: title,
-        child: Column(
-          children: [
-            for (var i = 0; i < options.length; i++)
-              InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  onPick(i);
-                  Navigator.pop(ctx);
-                  ajSnack(context, 'Pengaturan disimpan');
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: i == current ? Aj.blush : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: i == current ? Aj.blushDeep : Aj.line, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(options[i], style: Aj.b(13.5, w: FontWeight.w800))),
-                      if (i == current) const Icon(Icons.check_circle_rounded, color: Aj.berry, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
