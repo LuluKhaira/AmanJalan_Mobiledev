@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/services/auth_service.dart';
 import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/home/home_screen.dart';
+import 'package:amanjalan/features/onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,14 +43,27 @@ class _SplashScreenState extends State<SplashScreen>
     _timer = Timer(const Duration(milliseconds: 2800), _goNext);
   }
 
+  /// Alur:
+  /// sudah login                      -> Home
+  /// belum login, belum lihat onboarding -> Onboarding -> Login
+  /// belum login, sudah lihat onboarding -> Login
   Future<void> _goNext() async {
     if (!mounted) return;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
     final loggedIn = await AuthService.instance.isLoggedIn();
+    final prefs = await SharedPreferences.getInstance();
+    final seenOnboarding = prefs.getBool('seen_onboarding') ?? false;
     if (!mounted) return;
 
-    final next = loggedIn ? const HomeScreen() : const LoginScreen();
+    final Widget next;
+    if (loggedIn) {
+      next = const HomeScreen();
+    } else if (seenOnboarding) {
+      next = const LoginScreen();
+    } else {
+      next = const OnboardingScreen();
+    }
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

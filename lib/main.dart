@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +16,15 @@ Future<void> main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
+
+  // ---------------------------------------------------------------
+  // OPSIONAL (hanya untuk testing): hapus tanda komentar di bawah
+  // supaya onboarding selalu muncul lagi. Jangan lupa import:
+  // import 'package:shared_preferences/shared_preferences.dart';
+  //
+  // final prefs = await SharedPreferences.getInstance();
+  // await prefs.remove('seen_onboarding');
+  // ---------------------------------------------------------------
 
   runApp(const MyApp());
 }
@@ -37,6 +47,8 @@ class MyApp extends StatelessWidget {
         // Font body default Nunito (heading memakai Poppins langsung di tiap widget)
         textTheme: GoogleFonts.nunitoTextTheme(),
       ),
+      // Splash dulu. Setelah itu SplashScreen yang menentukan tujuan:
+      // Home / Onboarding / Login (lihat _goNext di splash_screen.dart)
       home: const SplashScreen(),
     );
   }
