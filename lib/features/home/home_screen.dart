@@ -13,9 +13,11 @@ import 'package:amanjalan/features/emergency/emergency_screen.dart';
 import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
 import 'package:amanjalan/features/home/perjalanan_tab.dart';
-import 'package:amanjalan/features/home/profile_tab.dart';
-// Import file sheet milikmu di sini
+import 'package:amanjalan/features/profile/screens/profile_tab.dart';
+// Import file data/store tempat GuardianStore & model Guardian berada
+import 'package:amanjalan/features/home/aj_data.dart';
 import 'package:amanjalan/features/home/widgets/add_guardian_sheet.dart';
+import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 
 const _sosRed = Color(0xFF8E1B1B);
 const _sosBadge = Color(0xFFF7D6D9);
@@ -186,15 +188,17 @@ class _HomeScreenState extends State<HomeScreen> {
           onGuardianAdded: () {
             setState(() {
               if (GuardianStore.guardians.value.isNotEmpty) {
-                final last = GuardianStore.guardians.value.last;
-                _guardiansList.add(
-                  _Guardian(
-                    name: last.name,
-                    relation: last.role,
-                    phone: '+62 812-3456-7890',
-                    color: const Color(0xFFFBE8F0),
-                  ),
-                );
+                _guardiansList.clear();
+                for (var g in GuardianStore.guardians.value) {
+                  _guardiansList.add(
+                    _Guardian(
+                      name: g.name,
+                      relation: g.role,
+                      phone: '+62 812-3456-7890',
+                      color: g.color,
+                    ),
+                  );
+                }
               }
             });
           },
@@ -202,8 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-
 
   // ---------- Build ----------
   @override
@@ -413,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () => _goToTab(1), // Pindah ke MapTab
+                onPressed: () => _goToTab(1),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.plum,
