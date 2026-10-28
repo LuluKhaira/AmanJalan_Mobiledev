@@ -5,11 +5,13 @@ import 'package:amanjalan/core/widgets/app_logo.dart';
 import 'package:amanjalan/features/notification/notification_screen.dart';
 
 class AppHeader extends StatelessWidget {
+  final String? subtitle;
   final VoidCallback? onProfileTap;
   final VoidCallback? onNotificationTap;
 
   const AppHeader({
     super.key,
+    this.subtitle,
     this.onProfileTap,
     this.onNotificationTap,
   });
@@ -40,7 +42,7 @@ class AppHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'PETA RUTE AMAN',
+                  subtitle ?? 'PETA RUTE AMAN',
                   style: GoogleFonts.nunito(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,

@@ -37,10 +37,10 @@ class FakeCallScreen extends StatefulWidget {
 
   const FakeCallScreen({
     super.key,
-    this.callerName = 'Mama',
+    this.callerName = 'Ibu Nurhayati',
     this.callerEmoji = '❤️',
-    this.callerLabel = 'Nomor Rumah (Batam center)',
-    this.callerNumber = '0812-9843-XXXX',
+    this.callerLabel = 'Wali Utama (Panggilan Rumah)',
+    this.callerNumber = '+62 812-3456-7890',
     this.location = 'Jl. Senopati Raya',
     this.guardianCount = 3,
     this.scenarioTitle = 'Dijemput di Depan Gang',

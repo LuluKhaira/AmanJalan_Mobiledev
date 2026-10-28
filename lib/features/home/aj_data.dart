@@ -79,6 +79,7 @@ class Guardian {
   final bool online;
   final Color color;
   final String? imageUrl;
+  final String? phone;
 
   const Guardian({
     required this.name,
@@ -87,6 +88,7 @@ class Guardian {
     required this.online,
     required this.color,
     this.imageUrl,
+    this.phone,
   });
 }
 
@@ -105,6 +107,7 @@ const List<Guardian> kGuardians = [
     online: true,
     color: Color(0xFFF4E6F0),
     imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+    phone: '+62 812-3456-7890',
   ),
   Guardian(
     name: 'Dinda Permata',
@@ -113,16 +116,36 @@ const List<Guardian> kGuardians = [
     online: true,
     color: Color(0xFFE6F0F4),
     imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+    phone: '+62 813-1111-2222',
   ),
   Guardian(
     name: 'Salsabila Rahma',
-    role: 'Sahabat',
+    role: 'Teman Kos',
     note: 'Radius Kampus UI Depok',
     online: false,
     color: Color(0xFFF0F4E6),
     imageUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
+    phone: '+62 857-3333-4444',
   ),
 ];
+
+/// Penyimpanan sementara di memori: daftar guardian.
+class GuardianStore {
+  GuardianStore._();
+  static final ValueNotifier<List<Guardian>> guardians =
+      ValueNotifier<List<Guardian>>([...kGuardians]);
+
+  static void addGuardian(Guardian g) {
+    guardians.value = [...guardians.value, g];
+  }
+
+  static void removeGuardian(int index) {
+    if (index >= 0 && index < guardians.value.length) {
+      final list = [...guardians.value]..removeAt(index);
+      guardians.value = list;
+    }
+  }
+}
 
 /// Penyimpanan sementara di memori: riwayat + perjalanan yang sedang aktif.
 class TripStore {

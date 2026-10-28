@@ -33,7 +33,7 @@ class EmergencyScreen extends StatefulWidget {
     this.coordinates = '1.129° N, 104.053° E',
     this.accuracy = '±4m',
     this.recipients = const [
-      EmergencyRecipient('Ibu (Kontak Utama)', '+62 812-3456-7890'),
+      EmergencyRecipient('Ibu Nurhayati (Wali Utama)', '+62 812-3456-7890'),
       EmergencyRecipient('Layanan Polisi Terpadu', 'Panggilan 110'),
     ],
   });
