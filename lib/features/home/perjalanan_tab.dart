@@ -5,7 +5,6 @@ import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
 import 'package:amanjalan/core/widgets/app_header.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
-import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 
 /// PERJALANAN — dua mode: "Saya Memantau" & "Saya Berjalan".
 class PerjalananTab extends StatefulWidget {
@@ -955,18 +954,6 @@ class _WalkingViewState extends State<_WalkingView> {
                           children: [
                             Expanded(child: Text('Guardian yang\nMengawasi', style: Aj.h(16, height: 1.25))),
                             AjPill('$onlineCount Online', bg: Aj.blushDeep, fg: Aj.berry, size: 11),
-                            const SizedBox(width: 6),
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const TambahGuardianScreen(),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.person_add_alt_1_outlined, size: 16, color: Aj.berry),
-                              label: Text('Tambah', style: Aj.b(13, color: Aj.berry, w: FontWeight.w800)),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -1105,34 +1092,350 @@ class _GuardianRow extends StatelessWidget {
   final Guardian g;
   const _GuardianRow(this.g);
 
+  void _openQuickMessageSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _QuickMessageSheet(guardian: g),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(18)),
-      child: Row(
-        children: [
-          AjAvatar(name: g.name, size: 44, online: g.online, color: g.color, imageUrl: g.imageUrl),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _openQuickMessageSheet(context),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
               children: [
-                Row(children: [
-                  Flexible(child: Text(g.name, overflow: TextOverflow.ellipsis, style: Aj.b(14.5, w: FontWeight.w800))),
-                  const SizedBox(width: 6),
-                  AjPill(g.role, bg: Colors.white, fg: Aj.muted, size: 10),
-                ]),
-                Text(g.note, style: Aj.b(12, color: Aj.muted)),
+                AjAvatar(name: g.name, size: 44, online: g.online, color: g.color, imageUrl: g.imageUrl),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Flexible(child: Text(g.name, overflow: TextOverflow.ellipsis, style: Aj.b(14.5, w: FontWeight.w800))),
+                        const SizedBox(width: 6),
+                        AjPill(g.role, bg: Colors.white, fg: Aj.muted, size: 10),
+                      ]),
+                      Text(g.note, style: Aj.b(12, color: Aj.muted)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _openQuickMessageSheet(context),
+                  tooltip: 'Kirim pesan update ke ' + g.name,
+                  icon: const Icon(Icons.chat_outlined, color: Aj.berry, size: 21),
+                ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => ajSnack(context, 'Membuka obrolan dengan ${g.name}', icon: Icons.chat_bubble_outline_rounded),
-            icon: const Icon(Icons.chat_outlined, color: Aj.berry, size: 21),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickMessageSheet extends StatefulWidget {
+  final Guardian guardian;
+  const _QuickMessageSheet({required this.guardian});
+
+  @override
+  State<_QuickMessageSheet> createState() => _QuickMessageSheetState();
+}
+
+class _QuickMessageSheetState extends State<_QuickMessageSheet> {
+  late final TextEditingController _controller;
+  int _selectedIndex = 0;
+
+  static const List<({String title, String text, IconData icon, Color iconBg, Color iconFg})> _templates = [
+    (
+      title: 'Status Aman',
+      text: 'Aku aman, sekarang sedang jalan menuju tujuan.',
+      icon: Icons.directions_walk_rounded,
+      iconBg: Color(0xFFE8F5E9),
+      iconFg: Color(0xFF2E7D4F),
+    ),
+    (
+      title: 'Pantau Saya',
+      text: 'Jalanan di sini agak sepi, tolong pantau live rute aku ya.',
+      icon: Icons.visibility_outlined,
+      iconBg: Color(0xFFFFF3E0),
+      iconFg: Color(0xFFE65100),
+    ),
+    (
+      title: 'Kirim Titik Live',
+      text: 'Ini koordinat live lokasiku sekarang di AmanJalan.',
+      icon: Icons.share_location_rounded,
+      iconBg: Color(0xFFFBE8F0),
+      iconFg: Aj.berry,
+    ),
+    (
+      title: 'Sudah Tiba',
+      text: 'Alhamdulillah aku sudah sampai di tujuan dengan selamat!',
+      icon: Icons.check_circle_outline_rounded,
+      iconBg: Color(0xFFE0F2F1),
+      iconFg: Color(0xFF00796B),
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _templates[0].text);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _sendWhatsApp() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    Navigator.pop(context);
+    ajSnack(
+      context,
+      'Pesan WhatsApp terkirim ke ' + widget.guardian.name,
+      icon: Icons.chat_bubble_rounded,
+    );
+  }
+
+  void _sendInApp() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    Navigator.pop(context);
+    ajSnack(
+      context,
+      'Notifikasi cepat terkirim ke ponsel ' + widget.guardian.name,
+      icon: Icons.notifications_active_rounded,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        20 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Aj.bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCD3D6),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                AjAvatar(
+                  name: widget.guardian.name,
+                  size: 46,
+                  online: widget.guardian.online,
+                  color: widget.guardian.color,
+                  imageUrl: widget.guardian.imageUrl,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.guardian.name,
+                              style: Aj.h(15.5),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          AjPill(widget.guardian.role, bg: Colors.white, fg: Aj.plum),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.guardian.phone ?? widget.guardian.note,
+                        style: Aj.b(12, color: Aj.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton.filledTonal(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ajSnack(
+                      context,
+                      'Memanggil ' + widget.guardian.name + ' (' + (widget.guardian.phone ?? 'Kontak') + ')…',
+                      icon: Icons.phone_rounded,
+                    );
+                  },
+                  tooltip: 'Telepon Guardian',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Aj.sand,
+                    foregroundColor: Aj.berry,
+                  ),
+                  icon: const Icon(Icons.call_rounded, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Aj.line),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Icon(Icons.bolt_rounded, size: 18, color: Aj.berry),
+                const SizedBox(width: 6),
+                Text('Pilih Pesan Singkat', style: Aj.h(13.5)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            for (int i = 0; i < _templates.length; i++) ...[
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  setState(() {
+                    _selectedIndex = i;
+                    _controller.text = _templates[i].text;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == i ? const Color(0xFFFDEEF2) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _selectedIndex == i ? Aj.berry : const Color(0xFFEBE5E3),
+                      width: _selectedIndex == i ? 1.6 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _templates[i].iconBg,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(_templates[i].icon, size: 19, color: _templates[i].iconFg),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _templates[i].title,
+                              style: Aj.b(
+                                13,
+                                w: FontWeight.w800,
+                                color: _selectedIndex == i ? Aj.berry : Aj.ink,
+                              ),
+                            ),
+                            Text(
+                              _templates[i].text,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Aj.b(11.5, color: Aj.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_selectedIndex == i)
+                        const Icon(Icons.check_circle_rounded, color: Aj.berry, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+              if (i < _templates.length - 1) const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 14),
+            Text('Kustomisasi Pesan:', style: Aj.b(12, color: Aj.muted, w: FontWeight.w700)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _controller,
+              maxLines: 2,
+              style: Aj.b(13),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE5DDD9)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE5DDD9)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Aj.berry, width: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _sendInApp,
+                    icon: const Icon(Icons.notifications_active_outlined, size: 17),
+                    label: const Text('In-App'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Aj.plum,
+                      side: const BorderSide(color: Aj.plum, width: 1.2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      textStyle: Aj.b(13, w: FontWeight.w800),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: _sendWhatsApp,
+                    icon: const Icon(Icons.chat_bubble_rounded, size: 17),
+                    label: const Text('Kirim WhatsApp'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      textStyle: Aj.b(13, w: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

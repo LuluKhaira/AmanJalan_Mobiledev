@@ -1,3 +1,4 @@
+import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
@@ -62,7 +63,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 const SizedBox(height: 16),
                 _credentialCard(context),
                 const SizedBox(height: 20),
-                _logout(),
+                _logout(context),
                 const SizedBox(height: 14),
                 Center(
                   child: Text(
@@ -223,64 +224,75 @@ class _ProfileTabState extends State<ProfileTab> {
 
   // ── Guardian ───────────────────────────────────────────────
   Widget _guardianCard(BuildContext context) {
-    return AjCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
+    return ValueListenableBuilder<List<Guardian>>(
+      valueListenable: GuardianStore.guardians,
+      builder: (context, guardians, _) {
+        return AjCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              const Icon(Icons.groups_rounded, color: Aj.berry, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Guardian & Saling Jaga', style: Aj.h(15.5))),
-              const AjPill('3 Terdaftar', bg: Aj.blush, fg: Aj.berry, size: 11),
-            ],
-          ),
-          const SizedBox(height: 12),
-          for (final g in kGuardians)
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(18)),
-              child: Row(
+              Row(
                 children: [
-                  AjAvatar(name: g.name, size: 44, color: g.color, online: g.online),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Flexible(child: Text(g.name, overflow: TextOverflow.ellipsis, style: Aj.b(14.5, w: FontWeight.w800))),
-                          const SizedBox(width: 6),
-                          AjPill(g.role, bg: g.role == 'Wali Utama' ? const Color(0xFFE5DDF2) : g.role == 'Teman Kos' ? Aj.mint : Colors.white, fg: g.role == 'Wali Utama' ? Aj.plum : g.role == 'Teman Kos' ? Aj.mintDeep : Aj.muted, size: 10),
-                        ]),
-                        const SizedBox(height: 2),
-                        Text(_guardianNote(g), style: Aj.b(12, color: Aj.muted, height: 1.25)),
-                      ],
-                    ),
+                  const Icon(Icons.groups_rounded, color: Aj.berry, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Guardian & Saling Jaga', style: Aj.h(15.5))),
+                  AjPill('${guardians.length} Terdaftar', bg: Aj.blush, fg: Aj.berry, size: 11),
+                  const SizedBox(width: 6),
+                  TextButton.icon(
+                    onPressed: () => _push(context, const TambahGuardianScreen()),
+                    icon: const Icon(Icons.person_add_alt_1_outlined, size: 16, color: Aj.berry),
+                    label: Text('Tambah', style: Aj.b(13, color: Aj.berry, w: FontWeight.w800)),
                   ),
-                  Icon(g.role == 'Wali Utama' ? Icons.check_circle_outline_rounded : g.role == 'Teman Kos' ? Icons.sync_rounded : Icons.verified_outlined, color: Aj.plum, size: 22),
                 ],
               ),
-            ),
-          const SizedBox(height: 2),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => ajSnack(context, 'Pilih kontak untuk dijadikan guardian (simulasi)', icon: Icons.person_add_alt_1_rounded),
-              style: FilledButton.styleFrom(
-                backgroundColor: Aj.blush,
-                foregroundColor: Aj.plum,
-                elevation: 0,
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              const SizedBox(height: 12),
+              for (final g in guardians)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(18)),
+                  child: Row(
+                    children: [
+                      AjAvatar(name: g.name, size: 44, color: g.color, online: g.online, imageUrl: g.imageUrl),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Flexible(child: Text(g.name, overflow: TextOverflow.ellipsis, style: Aj.b(14.5, w: FontWeight.w800))),
+                              const SizedBox(width: 6),
+                              AjPill(g.role, bg: g.role == 'Wali Utama' ? const Color(0xFFE5DDF2) : g.role == 'Teman Kos' ? Aj.mint : Colors.white, fg: g.role == 'Wali Utama' ? Aj.plum : g.role == 'Teman Kos' ? Aj.mintDeep : Aj.muted, size: 10),
+                            ]),
+                            const SizedBox(height: 2),
+                            Text(_guardianNote(g), style: Aj.b(12, color: Aj.muted, height: 1.25)),
+                          ],
+                        ),
+                      ),
+                      Icon(g.role == 'Wali Utama' ? Icons.check_circle_outline_rounded : g.role == 'Teman Kos' ? Icons.sync_rounded : Icons.verified_outlined, color: Aj.plum, size: 22),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 2),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _push(context, const TambahGuardianScreen()),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Aj.blush,
+                    foregroundColor: Aj.plum,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 18, color: Aj.plum),
+                  label: Text('Tambah Kontak Guardian Baru', style: Aj.b(13.5, color: Aj.plum, w: FontWeight.w800)),
+                ),
               ),
-              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18, color: Aj.plum),
-              label: Text('Tambah Kontak Guardian Baru', style: Aj.b(13.5, color: Aj.plum, w: FontWeight.w800)),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -376,9 +388,9 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   // ── Logout ─────────────────────────────────────────────────
-  Widget _logout() {
+  Widget _logout(BuildContext context) {
     return InkWell(
-      onTap: widget.onLogout,
+      onTap: () => _confirmLogout(context),
       borderRadius: BorderRadius.circular(18),
       child: Container(
         height: 54,
@@ -390,6 +402,94 @@ class _ProfileTabState extends State<ProfileTab> {
             const SizedBox(width: 8),
             Text('Keluar dari Akun', style: Aj.b(15, color: Aj.sos, w: FontWeight.w800)),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 38),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFDE8E8),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Aj.sos,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Keluar Akun?',
+                style: Aj.h(17, color: Aj.ink),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Apakah Anda yakin ingin keluar dari akun amanJalan?',
+                textAlign: TextAlign.center,
+                style: Aj.b(12.5, color: Aj.muted, height: 1.35),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Aj.ink,
+                        side: const BorderSide(color: Color(0xFFE0D8DA)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text('Batal', style: Aj.b(13, w: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pop(ctx);
+                        widget.onLogout();
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Aj.sos,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Keluar',
+                        style: Aj.b(13, color: Colors.white, w: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
