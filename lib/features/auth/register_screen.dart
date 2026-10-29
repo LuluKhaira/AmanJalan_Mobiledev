@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import 'package:amanjalan/core/theme/app_colors.dart';
-import 'package:amanjalan/core/widgets/app_logo.dart';
-import 'package:amanjalan/core/widgets/press_scale.dart';
+import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/auth/otp_screen.dart';
-
-// Warna khusus halaman ini (merah hanya untuk SOS, jadi error pakai rose)
-const _errorColor = Color(0xFFB83A5E);
-const _fieldFill = Color(0xFFF6F5F8);
-const _lineColor = Color(0xFFE6E3EA);
+import 'package:amanjalan/features/auth/widgets/auth_palette.dart';
+import 'package:amanjalan/features/auth/widgets/auth_shell.dart';
+import 'package:amanjalan/features/auth/widgets/auth_widgets.dart';
+import 'package:amanjalan/features/welcome/widgets/welcome_palette.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,16 +16,18 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
 
-  late final AnimationController _intro;
-  late final Animation<double> _fade;
+  final _nameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _passFocus = FocusNode();
+  final _mood = ValueNotifier<OwlMood>(OwlMood.idle);
 
   bool _obscure = true;
   bool _agreed = false;
@@ -39,25 +37,37 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void initState() {
     super.initState();
-    _intro = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-    _fade = CurvedAnimation(parent: _intro, curve: Curves.easeOut);
+    for (final f in [_nameFocus, _emailFocus, _phoneFocus, _passFocus]) {
+      f.addListener(_syncMood);
+    }
     _passCtrl.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _intro.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _passCtrl.dispose();
+    _nameFocus.dispose();
+    _emailFocus.dispose();
+    _phoneFocus.dispose();
+    _passFocus.dispose();
+    _mood.dispose();
     super.dispose();
   }
 
-  // ---------- Logic ----------
+  void _syncMood() {
+    if (_passFocus.hasFocus) {
+      _mood.value = _obscure ? OwlMood.shy : OwlMood.look;
+    } else if (_nameFocus.hasFocus || _emailFocus.hasFocus || _phoneFocus.hasFocus) {
+      _mood.value = OwlMood.look;
+    } else {
+      _mood.value = OwlMood.idle;
+    }
+  }
+
+  // ---------- Logika ----------
   int get _strength {
     final p = _passCtrl.text;
     if (p.isEmpty) return 0;
@@ -93,9 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (digits.startsWith('0')) digits = digits.substring(1);
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => OtpScreen(phone: '+62 $digits'),
-      ),
+      MaterialPageRoute(builder: (_) => OtpScreen(phone: '+62 $digits')),
     );
   }
 
@@ -110,226 +118,143 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  // ---------- Build ----------
+  // ---------- Tampilan ----------
   @override
   Widget build(BuildContext context) {
-    final canGoBack = Navigator.of(context).canPop();
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: FadeTransition(
-            opacity: _fade,
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.fromLTRB(26, canGoBack ? 20 : 48, 26, 28),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (canGoBack) ...[
-                      _buildBackButton(),
-                      const SizedBox(height: 20),
-                    ],
-                    _buildLogo(),
-                    const SizedBox(height: 32),
-                    _buildHeading(),
-                    const SizedBox(height: 36),
-
-                    _label('Nama Lengkap'),
-                    _CleanField(
-                      controller: _nameCtrl,
-                      hint: 'Contoh: Siti Rahma',
-                      keyboardType: TextInputType.name,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Nama wajib diisi';
-                        }
-                        if (v.trim().length < 3) return 'Nama terlalu pendek';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    _label('Email'),
-                    _CleanField(
-                      controller: _emailCtrl,
-                      hint: 'nama@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Email wajib diisi';
-                        }
-                        final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                            .hasMatch(v.trim());
-                        return ok ? null : 'Format email tidak valid';
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    _label('Nomor HP'),
-                    _CleanField(
-                      controller: _phoneCtrl,
-                      hint: '812 3456 7890',
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(13),
-                      ],
-                      prefix: const _CountryChip(),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Nomor HP wajib diisi';
-                        }
-                        if (v.length < 9) return 'Nomor HP tidak valid';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    _label('Kata Sandi'),
-                    _CleanField(
-                      controller: _passCtrl,
-                      hint: 'Minimal 8 karakter',
-                      obscure: _obscure,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _submit(),
-                      suffix: IconButton(
-                        splashRadius: 20,
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(
-                          _obscure
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 21,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return 'Kata sandi wajib diisi';
-                        }
-                        if (v.length < 8) return 'Minimal 8 karakter';
-                        return null;
-                      },
-                    ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      alignment: Alignment.topCenter,
-                      child: _passCtrl.text.isEmpty
-                          ? const SizedBox(width: double.infinity)
-                          : Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: _buildStrengthMeter(),
-                            ),
-                    ),
-                    const SizedBox(height: 22),
-
-                    _buildTermsCheck(),
-                    const SizedBox(height: 24),
-                    _buildPrimaryButton(),
-                    const SizedBox(height: 30),
-                    _buildDivider(),
-                    const SizedBox(height: 24),
-                    _buildSocialRow(),
-                    const SizedBox(height: 36),
-                    _buildLoginLink(),
-                  ],
+    return AuthShell(
+      title: 'Buat akun\nbaru',
+      subtitle: 'Daftar untuk mulai bepergian lebih tenang bersama Guardian terpercayamu.',
+      mood: _mood,
+      cardBuilder: (context, p) => Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AuthField(
+              p: p,
+              label: 'Nama Lengkap',
+              hint: 'Contoh: Siti Rahma',
+              icon: Icons.person_outline_rounded,
+              controller: _nameCtrl,
+              focusNode: _nameFocus,
+              keyboardType: TextInputType.name,
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+              autofillHints: const [AutofillHints.name],
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Nama wajib diisi';
+                if (v.trim().length < 3) return 'Nama terlalu pendek';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            AuthField(
+              p: p,
+              label: 'Email',
+              hint: 'nama@email.com',
+              icon: Icons.mail_outline_rounded,
+              controller: _emailCtrl,
+              focusNode: _emailFocus,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
+                final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
+                return ok ? null : 'Format email tidak valid';
+              },
+            ),
+            const SizedBox(height: 16),
+            AuthField(
+              p: p,
+              label: 'Nomor HP',
+              hint: '812 3456 7890',
+              controller: _phoneCtrl,
+              focusNode: _phoneFocus,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.telephoneNumberNational],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(13),
+              ],
+              prefix: _CountryChip(p: p),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Nomor HP wajib diisi';
+                if (v.length < 9) return 'Nomor HP tidak valid';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            AuthField(
+              p: p,
+              label: 'Kata Sandi',
+              hint: 'Minimal 8 karakter',
+              icon: Icons.lock_outline_rounded,
+              controller: _passCtrl,
+              focusNode: _passFocus,
+              obscure: _obscure,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.newPassword],
+              onSubmitted: (_) => _submit(),
+              suffix: IconButton(
+                splashRadius: 20,
+                onPressed: () {
+                  setState(() => _obscure = !_obscure);
+                  _syncMood();
+                },
+                icon: Icon(
+                  _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  size: 21,
+                  color: p.iconMuted,
                 ),
               ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
+                if (v.length < 8) return 'Minimal 8 karakter';
+                return null;
+              },
             ),
-          ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              alignment: Alignment.topCenter,
+              child: _passCtrl.text.isEmpty
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: _buildStrengthMeter(p),
+                    ),
+            ),
+            const SizedBox(height: 20),
+            _buildTermsCheck(p),
+            const SizedBox(height: 22),
+            AuthPrimaryButton(p: p, label: 'Daftar', loading: _loading, onTap: _submit),
+            const SizedBox(height: 22),
+            AuthDivider(p: p),
+            const SizedBox(height: 18),
+            AuthSocialRow(p: p),
+          ],
         ),
+      ),
+      footerBuilder: (context, p) => AuthFooterLink(
+        p: p,
+        text: 'Sudah punya akun?',
+        action: 'Masuk',
+        onTap: _goToLogin,
       ),
     );
   }
 
-  // ---------- Bagian layar ----------
-  Widget _buildBackButton() {
-    return PressScale(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          Navigator.of(context).maybePop();
-        },
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: _fieldFill,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(
-            Icons.arrow_back_rounded,
-            size: 22,
-            color: AppColors.textDark,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogo() {
-    return const AppLogo(size: 56);
-  }
-
-  Widget _buildHeading() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Buat akun\nbaru',
-          style: GoogleFonts.poppins(
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textDark,
-            height: 1.2,
-            letterSpacing: -0.6,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Daftar untuk mulai bepergian lebih tenang bersama Guardian terpercayamu.',
-          style: GoogleFonts.nunito(
-            fontSize: 15,
-            height: 1.5,
-            color: AppColors.textMuted,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          text,
-          style: GoogleFonts.nunito(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textDark,
-          ),
-        ),
-      );
-
-  Widget _buildStrengthMeter() {
+  Widget _buildStrengthMeter(WelcomePalette p) {
     final s = _strength;
     const labels = ['', 'Lemah', 'Cukup', 'Kuat', 'Sangat kuat'];
-    const colors = [
-      _lineColor,
-      Color(0xFFD98A6C),
-      Color(0xFFE3B34F),
-      Color(0xFF7DB88A),
-      Color(0xFF4E9F6B),
+    final colors = [
+      p.line,
+      const Color(0xFFD98A6C),
+      const Color(0xFFE3B34F),
+      const Color(0xFF7DB88A),
+      const Color(0xFF4E9F6B),
     ];
     final active = colors[s];
 
@@ -344,7 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   height: 4,
                   margin: EdgeInsets.only(right: i == 3 ? 0 : 5),
                   decoration: BoxDecoration(
-                    color: i < s ? active : _lineColor,
+                    color: i < s ? active : p.line,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -358,32 +283,28 @@ class _RegisterScreenState extends State<RegisterScreen>
           child: Text(
             labels[s],
             textAlign: TextAlign.right,
-            style: GoogleFonts.nunito(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: active == _lineColor ? AppColors.textMuted : active,
-            ),
+            style: Aj.b(12.5, color: s == 0 ? p.subtitle : active, w: FontWeight.w800),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTermsCheck() {
-    const link = TextStyle(
-      color: AppColors.plum,
-      fontWeight: FontWeight.w800,
-    );
+  Widget _buildTermsCheck(WelcomePalette p) {
+    final link = Aj.b(13.5, color: p.link, w: FontWeight.w800, height: 1.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() {
-            _agreed = !_agreed;
-            if (_agreed) _showAgreeError = false;
-          }),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _agreed = !_agreed;
+              if (_agreed) _showAgreeError = false;
+            });
+          },
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -393,37 +314,30 @@ class _RegisterScreenState extends State<RegisterScreen>
                 height: 22,
                 margin: const EdgeInsets.only(top: 1),
                 decoration: BoxDecoration(
-                  color: _agreed ? AppColors.plum : Colors.white,
+                  color: _agreed ? p.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(7),
                   border: Border.all(
                     color: _agreed
-                        ? AppColors.plum
-                        : (_showAgreeError
-                            ? _errorColor
-                            : const Color(0xFFC9C3D1)),
+                        ? p.primary
+                        : (_showAgreeError ? p.error : p.checkBorder),
                     width: 1.5,
                   ),
                 ),
                 child: _agreed
-                    ? const Icon(Icons.check_rounded,
-                        size: 16, color: Colors.white)
+                    ? Icon(Icons.check_rounded, size: 16, color: p.onPrimary)
                     : null,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    style: GoogleFonts.nunito(
-                      fontSize: 13.5,
-                      height: 1.5,
-                      color: AppColors.textMuted,
-                    ),
-                    children: const [
-                      TextSpan(text: 'Saya menyetujui '),
+                    style: Aj.b(13.5, color: p.subtitle, w: FontWeight.w600, height: 1.5),
+                    children: [
+                      const TextSpan(text: 'Saya menyetujui '),
                       TextSpan(text: 'Ketentuan Layanan', style: link),
-                      TextSpan(text: ' & '),
+                      const TextSpan(text: ' & '),
                       TextSpan(text: 'Kebijakan Privasi', style: link),
-                      TextSpan(text: ' AmanJalan.'),
+                      const TextSpan(text: ' AmanJalan.'),
                     ],
                   ),
                 ),
@@ -438,170 +352,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                   padding: const EdgeInsets.only(top: 8, left: 34),
                   child: Text(
                     'Setujui ketentuan untuk melanjutkan',
-                    style: GoogleFonts.nunito(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: _errorColor,
-                    ),
+                    style: Aj.b(12.5, color: p.error, w: FontWeight.w700),
                   ),
                 )
               : const SizedBox(width: double.infinity),
         ),
       ],
-    );
-  }
-
-  Widget _buildPrimaryButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        onPressed: _loading ? null : _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.plum,
-          disabledBackgroundColor: AppColors.plum,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: _loading
-              ? const SizedBox(
-                  key: ValueKey('loading'),
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(
-                  'Daftar',
-                  key: const ValueKey('label'),
-                  style: GoogleFonts.nunito(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider(color: _lineColor, thickness: 1)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            'atau',
-            style: GoogleFonts.nunito(
-              fontSize: 13.5,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-        const Expanded(child: Divider(color: _lineColor, thickness: 1)),
-      ],
-    );
-  }
-
-  Widget _buildSocialRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _socialButton(
-            label: 'Google',
-            leading: Text(
-              'G',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF4285F4),
-              ),
-            ),
-            onTap: () {}, // TODO: Google Sign-In
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _socialButton(
-            label: 'Apple',
-            leading: const Icon(Icons.apple, size: 23, color: Colors.black),
-            onTap: () {}, // TODO: Apple Sign-In
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _socialButton({
-    required String label,
-    required Widget leading,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      height: 52,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: _lineColor, width: 1.2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(width: 24, child: Center(child: leading)),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.nunito(
-                fontSize: 15.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoginLink() {
-    return Center(
-      child: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(
-            'Sudah punya akun? ',
-            style: GoogleFonts.nunito(
-              fontSize: 15,
-              color: AppColors.textMuted,
-            ),
-          ),
-          GestureDetector(
-            onTap: _goToLogin,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                'Masuk',
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.plum,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -610,120 +366,25 @@ class _RegisterScreenState extends State<RegisterScreen>
 // Chip kode negara (+62)
 // =====================================================================
 class _CountryChip extends StatelessWidget {
-  const _CountryChip();
+  final WelcomePalette p;
+  const _CountryChip({required this.p});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: _lineColor),
+        color: p.cardBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: p.fieldBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text('🇮🇩', style: TextStyle(fontSize: 15)),
           const SizedBox(width: 6),
-          Text(
-            '+62',
-            style: GoogleFonts.nunito(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
-            ),
-          ),
+          Text('+62', style: Aj.b(14.5, color: p.fieldText, w: FontWeight.w800)),
         ],
-      ),
-    );
-  }
-}
-
-// =====================================================================
-// Field polos: latar abu sangat muda, tanpa bayangan dan tanpa ikon
-// (gaya sama dengan halaman login)
-// =====================================================================
-class _CleanField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final TextCapitalization textCapitalization;
-  final List<TextInputFormatter>? inputFormatters;
-  final String? Function(String?)? validator;
-  final bool obscure;
-  final Widget? prefix;
-  final Widget? suffix;
-  final ValueChanged<String>? onSubmitted;
-
-  const _CleanField({
-    required this.controller,
-    required this.hint,
-    this.keyboardType,
-    this.textInputAction,
-    this.textCapitalization = TextCapitalization.none,
-    this.inputFormatters,
-    this.validator,
-    this.obscure = false,
-    this.prefix,
-    this.suffix,
-    this.onSubmitted,
-  });
-
-  OutlineInputBorder _border(Color color, double width) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: width == 0
-            ? BorderSide.none
-            : BorderSide(color: color, width: width),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      textCapitalization: textCapitalization,
-      inputFormatters: inputFormatters,
-      validator: validator,
-      onFieldSubmitted: onSubmitted,
-      cursorColor: AppColors.plum,
-      style: GoogleFonts.nunito(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.nunito(
-          fontSize: 15,
-          color: const Color(0xFF9A95A6),
-        ),
-        filled: true,
-        fillColor: _fieldFill,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        prefixIcon: prefix == null
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(left: 12, right: 10),
-                child: prefix,
-              ),
-        prefixIconConstraints:
-            const BoxConstraints(minWidth: 0, minHeight: 0),
-        suffixIcon: suffix,
-        border: _border(Colors.transparent, 0),
-        enabledBorder: _border(Colors.transparent, 0),
-        focusedBorder: _border(AppColors.plum, 1.5),
-        errorBorder: _border(_errorColor, 1.2),
-        focusedErrorBorder: _border(_errorColor, 1.5),
-        errorStyle: GoogleFonts.nunito(
-          fontSize: 12.5,
-          fontWeight: FontWeight.w600,
-          color: _errorColor,
-        ),
       ),
     );
   }
