@@ -89,6 +89,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canGoBack = Navigator.of(context).canPop();
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
@@ -96,13 +98,17 @@ class _LoginScreenState extends State<LoginScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(26, 48, 26, 28),
+            padding: EdgeInsets.fromLTRB(26, canGoBack ? 20 : 48, 26, 28),
             child: Form(
               key: _formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (canGoBack) ...[
+                    AnimatedEntrance(index: 0, child: _buildBackButton()),
+                    const SizedBox(height: 20),
+                  ],
                   AnimatedEntrance(index: 0, child: _buildLogo()),
                   const SizedBox(height: 32),
                   AnimatedEntrance(index: 1, child: _buildHeading()),
@@ -183,6 +189,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return PressScale(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.of(context).maybePop();
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _fieldFill,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.arrow_back_rounded,
+            size: 22,
+            color: AppColors.textDark,
           ),
         ),
       ),

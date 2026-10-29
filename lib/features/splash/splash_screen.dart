@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/services/auth_service.dart';
 import 'package:amanjalan/core/widgets/app_logo.dart';
-import 'package:amanjalan/features/auth/login_screen.dart';
+import 'package:amanjalan/features/welcome/welcome_screen.dart';
 import 'package:amanjalan/features/home/home_screen.dart';
 import 'package:amanjalan/features/onboarding/onboarding_screen.dart';
 
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (loggedIn) {
       next = const HomeScreen();
     } else if (seenOnboarding) {
-      next = const LoginScreen();
+      next = const WelcomeScreen();
     } else {
       next = const OnboardingScreen();
     }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/widgets/app_logo.dart';
+import 'package:amanjalan/core/widgets/press_scale.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/auth/otp_screen.dart';
 
@@ -112,6 +113,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   // ---------- Build ----------
   @override
   Widget build(BuildContext context) {
+    final canGoBack = Navigator.of(context).canPop();
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
@@ -121,13 +124,17 @@ class _RegisterScreenState extends State<RegisterScreen>
             opacity: _fade,
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(26, 48, 26, 28),
+              padding: EdgeInsets.fromLTRB(26, canGoBack ? 20 : 48, 26, 28),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (canGoBack) ...[
+                      _buildBackButton(),
+                      const SizedBox(height: 20),
+                    ],
                     _buildLogo(),
                     const SizedBox(height: 32),
                     _buildHeading(),
@@ -246,6 +253,31 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   // ---------- Bagian layar ----------
+  Widget _buildBackButton() {
+    return PressScale(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.of(context).maybePop();
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: _fieldFill,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.arrow_back_rounded,
+            size: 22,
+            color: AppColors.textDark,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLogo() {
     return const AppLogo(size: 56);
   }

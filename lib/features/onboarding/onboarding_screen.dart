@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:amanjalan/core/theme/aj_theme.dart';
-import 'package:amanjalan/features/auth/login_screen.dart';
+import 'package:amanjalan/features/welcome/welcome_screen.dart';
 import 'package:amanjalan/features/onboarding/models/onboarding_data.dart';
 import 'package:amanjalan/features/onboarding/widgets/onboarding_page.dart';
 import 'package:amanjalan/features/onboarding/widgets/page_indicator.dart';
@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   /// Tandai onboarding sudah dilihat, lalu masuk ke Login.
-  Future<void> _finish() async {
+   Future<void> _finish() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seen_onboarding', true);
     if (!mounted) return;
@@ -53,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, __, ___) => const LoginScreen(),
+        pageBuilder: (_, __, ___) => const WelcomeScreen(),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
