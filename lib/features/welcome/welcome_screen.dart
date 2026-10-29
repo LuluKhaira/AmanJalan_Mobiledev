@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/auth/register_screen.dart';
+import 'package:amanjalan/features/auth/widgets/auth_mode.dart';
 import 'package:amanjalan/features/welcome/widgets/day_night_toggle.dart';
 import 'package:amanjalan/features/welcome/widgets/sky_scene.dart';
 import 'package:amanjalan/features/welcome/widgets/welcome_background.dart';
@@ -22,13 +23,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     with TickerProviderStateMixin {
   static const _owl = 'assets/images/onboarding/owl_welcome.png';
 
-  /// Awal mengikuti jam perangkat: malam = 18.00 – 05.00.
-  late bool _night = _isNightNow();
-
-  static bool _isNightNow() {
-    final h = DateTime.now().hour;
-    return h >= 18 || h < 5;
-  }
+  /// Awal mengikuti jam perangkat (malam = 18.00 – 05.00) atau pilihan terakhir.
+  late bool _night = AuthMode.resolve();
 
   late final AnimationController _mode = AnimationController(
     vsync: this,
@@ -53,6 +49,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   void _toggle() {
     HapticFeedback.selectionClick();
     setState(() => _night = !_night);
+    AuthMode.night = _night;
     _night ? _mode.forward() : _mode.reverse();
   }
 
