@@ -223,7 +223,7 @@ class _AppVersionScreenState extends State<AppVersionScreen> {
           children: [
             Text('Dibuat dengan ', style: Aj.b(12, color: Aj.muted)),
             const Icon(Icons.favorite_rounded, size: 14, color: Aj.berry),
-            Text(' untuk keselamatan pejalan kaki perempuan Indonesia.', style: Aj.b(12, color: Aj.muted)),
+            Text(' untuk keselamatan perempuan di seluruh dunia.', style: Aj.b(12, color: Aj.muted)),
           ],
         ),
         const SizedBox(height: 4),
