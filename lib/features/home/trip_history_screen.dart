@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
+// Shim: file ini dipindah ke features/perjalanan/screens/riwayat_screen.dart.
+// Dibiarkan sebagai re-export supaya import lama (mis. dari profile_tab.dart)
+// tetap jalan. Boleh dihapus setelah semua import diganti.
+export 'package:amanjalan/features/perjalanan/screens/riwayat_screen.dart';
+
 
 /// Satu baris riwayat — dipakai di Profil (ringkas) & layar riwayat lengkap.
 class TripHistoryTile extends StatelessWidget {

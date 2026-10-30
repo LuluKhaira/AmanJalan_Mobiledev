@@ -10,7 +10,7 @@ import 'package:amanjalan/features/home/aj_data.dart';
 import 'package:amanjalan/features/home/widgets/beranda_tab.dart';
 import 'package:amanjalan/features/home/manage_guardian_screen.dart';
 import 'package:amanjalan/features/home/map_tab.dart';
-import 'package:amanjalan/features/home/perjalanan_tab.dart';
+import 'package:amanjalan/features/perjalanan/perjalanan_tab.dart';
 import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 import 'package:amanjalan/features/profile/screens/profile_tab.dart';
 

@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/core/widgets/press_scale.dart';
 import 'package:amanjalan/core/widgets/app_header.dart';
-import 'package:amanjalan/features/home/active_trip_screen.dart';
+import 'package:amanjalan/features/perjalanan/perjalanan_actions.dart';
 
 // ==========================================
 // PENGATURAN PETA
@@ -465,16 +465,7 @@ class _MapTabState extends State<MapTab> with TickerProviderStateMixin {
                             height: 56,
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  PageRouteBuilder(
-                                    transitionDuration: const Duration(milliseconds: 400),
-                                    pageBuilder: (_, __, ___) => const ActiveTripScreen(),
-                                    transitionsBuilder: (_, animation, __, child) =>
-                                        FadeTransition(opacity: animation, child: child),
-                                  ),
-                                );
-                              },
+                              onPressed: () => pjStartFromMap(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.plum,
                                 foregroundColor: Colors.white,
