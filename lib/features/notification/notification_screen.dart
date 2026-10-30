@@ -1,11 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import 'package:amanjalan/core/theme/app_colors.dart';
-import 'package:amanjalan/core/widgets/press_scale.dart';
+import 'package:amanjalan/core/theme/aj_theme.dart';
+import 'package:amanjalan/core/widgets/aj_common.dart';
 import 'package:amanjalan/core/widgets/animated_entrance.dart';
+import 'package:amanjalan/features/profile/screens/notification_settings_screen.dart';
+import 'package:amanjalan/features/profile/widgets/profile_kit.dart';
 
+// ─────────────────────────────────────────────────────────────
+// Model
+// ─────────────────────────────────────────────────────────────
+
+enum _Kind { info, warning, system }
+
+class _Act {
+  final IconData icon;
+  final String label;
+  final String toast;
+  const _Act(this.icon, this.label, this.toast);
+}
+
+class _N {
+  final String id;
+  final _Kind kind;
+  final String title;
+  final String body;
+  final String time;
+  final String group; // 'Hari Ini' / 'Kemarin'
+  final IconData icon;
+  final Color bg;
+  final Color fg;
+  final bool mascot; // pakai wajah burung hantu sebagai ikon
+  final bool urgent;
+  final String? detail;
+  final List<_Act> acts;
+  bool unread;
+
+  _N({
+    required this.id,
+    required this.kind,
+    required this.title,
+    required this.body,
+    required this.time,
+    required this.group,
+    required this.icon,
+    required this.bg,
+    required this.fg,
+    this.mascot = false,
+    this.urgent = false,
+    this.detail,
+    this.acts = const [],
+    this.unread = false,
+  });
+}
+
+/// NOTIFIKASI — inbox. Pengaturannya ada di features/profile/screens/notification_settings_screen.dart
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -14,186 +63,194 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  // 0: Semua (4), 1: Darurat & Sensor (1), 2: Saling Pantau (2)
-  int _selectedFilter = 0;
-  bool _unread = true;
+  static const _filters = <(String, IconData, _Kind?)>[
+    ('Semua', Icons.notifications_rounded, null),
+    ('Info', Icons.info_rounded, _Kind.info),
+    ('Peringatan', Icons.warning_amber_rounded, _Kind.warning),
+    ('Sistem', Icons.settings_suggest_rounded, _Kind.system),
+  ];
 
-  void _markAllAsRead() {
-    HapticFeedback.lightImpact();
-    setState(() => _unread = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.plum,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Semua notifikasi telah ditandai dibaca',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
+  final List<_N> _items = [
+    _N(
+      id: 'n1',
+      kind: _Kind.warning,
+      urgent: true,
+      title: 'Guncangan Terdeteksi',
+      body: 'Sensor mendeteksi guncangan 3× dari ponsel Salsabila. Dia sudah membatalkannya dan menyatakan aman.',
+      time: '15 mnt lalu',
+      group: 'Hari Ini',
+      icon: Icons.vibration_rounded,
+      bg: Aj.sosSoft,
+      fg: Aj.sos,
+      unread: true,
+      detail: 'Pembatalan dilakukan oleh Salsabila sendiri dalam 4 detik. Tidak ada sinyal SOS yang dikirim. Kamu tetap bisa mengecek lokasi terakhirnya bila perlu.',
+      acts: [
+        _Act(Icons.place_rounded, 'Cek Lokasi', 'Membuka lokasi terakhir Salsabila… (simulasi)'),
+        _Act(Icons.call_rounded, 'Telepon', 'Menghubungi Salsabila… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n2',
+      kind: _Kind.info,
+      mascot: true,
+      title: 'Perjalanan Kamu Aman!',
+      body: 'Terima kasih sudah menggunakan AmanJalan. Kamu tiba dengan selamat, sampai jumpa di perjalanan selanjutnya!',
+      time: '2 menit lalu',
+      group: 'Hari Ini',
+      icon: Icons.pets_rounded,
+      bg: Aj.blush,
+      fg: Aj.plum,
+      unread: true,
+      detail: 'Perjalanan selesai tanpa kejadian. Streak Aman-mu bertambah 1 hari. Pertahankan ya!',
+      acts: [
+        _Act(Icons.history_rounded, 'Lihat Riwayat', 'Membuka riwayat perjalanan… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n3',
+      kind: _Kind.info,
+      title: 'Update Rute Terdekat',
+      body: 'Terdapat perubahan kondisi lalu lintas di sekitar lokasi kamu. Cek rute alternatif pada peta.',
+      time: '15 menit lalu',
+      group: 'Hari Ini',
+      icon: Icons.location_on_rounded,
+      bg: Aj.mint,
+      fg: Aj.mintDeep,
+      unread: true,
+      detail: 'Ada penutupan sebagian jalan. Rute alternatif menambah waktu sekitar 6 menit tetapi melewati jalan yang lebih terang dan ramai.',
+      acts: [
+        _Act(Icons.map_rounded, 'Buka Peta', 'Membuka peta rute alternatif… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n4',
+      kind: _Kind.warning,
+      title: 'Peringatan Cuaca',
+      body: 'Hujan ringan diperkirakan turun pada 14.00 – 16.00 WIB di area Batam. Harap berhati-hati saat berkendara.',
+      time: '1 jam lalu',
+      group: 'Hari Ini',
+      icon: Icons.thunderstorm_rounded,
+      bg: Color(0xFFFFE0E6),
+      fg: Aj.sos,
+      detail: 'Jalanan bisa licin dan jarak pandang berkurang. Pertimbangkan berangkat lebih awal atau berbagi lokasi dengan Guardian.',
+      acts: [
+        _Act(Icons.share_location_rounded, 'Bagikan Lokasi', 'Lokasi dibagikan ke Guardian (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n5',
+      kind: _Kind.warning,
+      title: 'Baterai Teman Rendah',
+      body: 'Daya ponsel Dinda tinggal 18% dan dia sedang dalam perjalanan. Mode hemat daya darurat disarankan.',
+      time: '2 jam lalu',
+      group: 'Hari Ini',
+      icon: Icons.battery_alert_rounded,
+      bg: Color(0xFFFFF0C9),
+      fg: Color(0xFFB45309),
+      detail: 'Kamu bisa mengirim pengingat singkat agar Dinda mengisi daya atau menyalakan mode hemat.',
+      acts: [
+        _Act(Icons.chat_rounded, 'Ingatkan via WhatsApp', 'Mengirim pengingat ke Dinda… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n6',
+      kind: _Kind.system,
+      title: 'Verifikasi Akun Berhasil',
+      body: 'Akun kamu sudah terverifikasi. Sekarang kamu bisa mengakses semua fitur.',
+      time: '3 jam lalu',
+      group: 'Hari Ini',
+      icon: Icons.verified_user_rounded,
+      bg: Aj.mint,
+      fg: Aj.mintDeep,
+      detail: 'Email dan nomor teleponmu sudah terverifikasi, sehingga akunmu lebih aman dan mudah dipulihkan.',
+      acts: [
+        _Act(Icons.verified_rounded, 'Lihat Status', 'Membuka status akun… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n7',
+      kind: _Kind.info,
+      title: 'Saling Pantau Terhubung',
+      body: 'Kamu dan Dinda kini saling menjaga. Lokasi hanya dibagikan saat kamu mengizinkan.',
+      time: 'Kemarin 20:15',
+      group: 'Kemarin',
+      icon: Icons.people_alt_rounded,
+      bg: Color(0xFFEDE5FA),
+      fg: Color(0xFF5C2880),
+      detail: 'Kamu bisa menghentikan Saling Pantau kapan saja dari menu QR Saling Pantau di Profil.',
+      acts: [
+        _Act(Icons.qr_code_2_rounded, 'Kelola Teman', 'Membuka Saling Pantau… (simulasi)'),
+      ],
+    ),
+    _N(
+      id: 'n8',
+      kind: _Kind.system,
+      title: 'Informasi Penting',
+      body: 'Demi keamanan bersama, pastikan selalu mengaktifkan lokasi saat menggunakan layanan AmanJalan.',
+      time: 'Kemarin 09:00',
+      group: 'Kemarin',
+      icon: Icons.campaign_rounded,
+      bg: Aj.blush,
+      fg: Aj.berry,
+      detail: 'Tanpa lokasi aktif, fitur SOS, Pantau Perjalanan, dan Rute Aman tidak dapat bekerja dengan akurat.',
+      acts: [
+        _Act(Icons.my_location_rounded, 'Cek Izin Lokasi', 'Membuka pengaturan izin lokasi… (simulasi)'),
+      ],
+    ),
+  ];
+
+  int _filter = 0;
+  String? _open;
+
+  int get _unreadCount => _items.where((n) => n.unread).length;
+
+  int _unreadOf(_Kind? k) => _items.where((n) => n.unread && (k == null || n.kind == k)).length;
+
+  List<_N> get _visible {
+    final k = _filters[_filter].$3;
+    return _items.where((n) => k == null || n.kind == k).toList();
   }
 
-  void _openSettings() {
+  void _markAll() {
+    if (_unreadCount == 0) {
+      ajSnack(context, 'Semua sudah dibaca', icon: Icons.done_all_rounded);
+      return;
+    }
+    HapticFeedback.lightImpact();
+    setState(() {
+      for (final n in _items) {
+        n.unread = false;
+      }
+    });
+    ajSnack(context, 'Semua notifikasi ditandai dibaca', icon: Icons.done_all_rounded);
+  }
+
+  void _toggle(_N n) {
     HapticFeedback.selectionClick();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Pengaturan Notifikasi & Suara Darurat',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sesuaikan sensitivitas peringatan sensor dan saluran darurat.',
-                  style: GoogleFonts.nunito(
-                    fontSize: 13,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildSettingTile(
-                  icon: Icons.vibration,
-                  title: 'Sensitivitas Sensor Sentakan',
-                  subtitle: 'Tinggi (Deteksi jatuh & guncangan keras)',
-                ),
-                _buildSettingTile(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Suara Sirene Sirene Darurat',
-                  subtitle: 'Volume Penuh saat SOS Aktif',
-                ),
-                _buildSettingTile(
-                  icon: Icons.location_on_outlined,
-                  title: 'Notifikasi Geofence Rumah',
-                  subtitle: 'Kirim otomatis ke seluruh Guardian',
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.plum,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      'Simpan Pengaturan',
-                      style: GoogleFonts.nunito(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    setState(() {
+      n.unread = false;
+      _open = _open == n.id ? null : n.id;
+    });
   }
 
-  Widget _buildSettingTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.softPink,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: AppColors.plum, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.nunito(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.check_circle_rounded, color: AppColors.plum, size: 20),
-        ],
-      ),
-    );
-  }
-
-  void _showLocationDialog(String title, String loc) {
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
+  void _dismiss(_N n) {
+    final idx = _items.indexOf(n);
+    setState(() {
+      _items.remove(n);
+      if (_open == n.id) _open = null;
+    });
+    final m = ScaffoldMessenger.of(context);
+    m.hideCurrentSnackBar();
+    m.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.plum,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Membuka peta lokasi: $loc ($title)',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  void _sendWhatsAppReminder(String name) {
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E8256),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          'Mengirim pengingat WhatsApp hemat daya ke $name...',
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+        backgroundColor: Aj.plum,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text('Notifikasi dihapus', style: Aj.b(13, color: Colors.white, w: FontWeight.w700)),
+        action: SnackBarAction(
+          label: 'URUNGKAN',
+          textColor: const Color(0xFFFFB8D1),
+          onPressed: () => setState(() => _items.insert(idx.clamp(0, _items.length), n)),
         ),
       ),
     );
@@ -201,96 +258,65 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFBF9FC),
-        body: SafeArea(
+    final list = _visible;
+    final groups = <String>[];
+    for (final n in list) {
+      if (!groups.contains(n.group)) groups.add(n.group);
+    }
+
+    var idx = 0;
+    return Scaffold(
+      backgroundColor: Aj.bg,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFEEF4), Color(0xFFFFFAFC)],
+            stops: [0, 0.5],
+          ),
+        ),
+        child: SafeArea(
           child: Column(
             children: [
-              _buildTopBar(),
+              _topBar(),
+              _filterBar(),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Banner Sistem Proteksi Aktif
-                      AnimatedEntrance(index: 0, child: _buildProtectionBanner()),
-                      const SizedBox(height: 18),
-
-                      // Filter Chips
-                      AnimatedEntrance(index: 1, child: _buildFilterChips()),
-                      const SizedBox(height: 22),
-
-                      // Section Hari Ini
-                      if (_shouldShowTodaySection) ...[
-                        AnimatedEntrance(
-                          index: 2,
-                          child: _buildSectionHeader(
-                            title: 'HARI INI',
-                            subtitle: 'Real-time',
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
+                  children: [
+                    if (list.isEmpty)
+                      _empty()
+                    else
+                      for (final g in groups) ...[
+                        _groupLabel(g, list.where((n) => n.group == g && n.unread).length),
+                        for (final n in list.where((n) => n.group == g)) _card(n, idx++),
+                      ],
+                    const SizedBox(height: 6),
+                    PfBanner(
+                      owl: pfOwlPhone,
+                      title: 'Selalu aktifkan notifikasi, ya!',
+                      sub: 'Agar kamu tidak ketinggalan informasi penting dari AmanJalan.',
+                      button: 'Atur',
+                      onButton: () => pfPush(context, const NotificationSettingsScreen()),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, size: 13, color: Aj.muted),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Riwayat terenkripsi & dihapus otomatis setelah 30 hari.',
+                            textAlign: TextAlign.center,
+                            style: Aj.b(11.5, color: Aj.muted),
                           ),
                         ),
-                        const SizedBox(height: 12),
-
-                        // Card 1: Guncangan Terdeteksi
-                        if (_selectedFilter == 0 || _selectedFilter == 1)
-                          AnimatedEntrance(
-                            index: 3,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _buildShakeAlertCard(),
-                            ),
-                          ),
-
-                        // Card 2: Ibu Nurhayati Tiba di Rumah
-                        if (_selectedFilter == 0 || _selectedFilter == 1)
-                          AnimatedEntrance(
-                            index: 4,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 22),
-                              child: _buildGeofenceArrivalCard(),
-                            ),
-                          ),
                       ],
-
-                      // Section Kemarin & Sebelumnya
-                      if (_shouldShowYesterdaySection) ...[
-                        AnimatedEntrance(
-                          index: 5,
-                          child: _buildSectionHeader(
-                            title: 'KEMARIN & SEBELUMNYA',
-                            subtitle: 'Riwayat 48 Jam',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Card 3: Koneksi Saling Pantau Aktif
-                        if (_selectedFilter == 0 || _selectedFilter == 2)
-                          AnimatedEntrance(
-                            index: 6,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _buildMutualEscortCard(),
-                            ),
-                          ),
-
-                        // Card 4: Baterai Rendah
-                        if (_selectedFilter == 0 || _selectedFilter == 1)
-                          AnimatedEntrance(
-                            index: 7,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 24),
-                              child: _buildLowBatteryCard(),
-                            ),
-                          ),
-                      ],
-
-                      // Footer Enkripsi & Pengaturan Notifikasi
-                      AnimatedEntrance(index: 8, child: _buildFooter()),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -300,1062 +326,344 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  bool get _shouldShowTodaySection {
-    if (_selectedFilter == 0) return true;
-    if (_selectedFilter == 1) return true; // ada Card 1 & Card 2
-    return false;
-  }
-
-  bool get _shouldShowYesterdaySection {
-    if (_selectedFilter == 0) return true;
-    if (_selectedFilter == 1) return true; // ada Card 4
-    if (_selectedFilter == 2) return true; // ada Card 3
-    return false;
-  }
-
-  // ==========================================
-  // TOP APP BAR
-  // ==========================================
-  Widget _buildTopBar() {
+  // ── Header ────────────────────────────────────────────────
+  Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 24),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Notifikasi',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(width: 10),
-          if (_unread)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF352B42),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                '3 Baru',
-                style: GoogleFonts.nunito(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          const Spacer(),
-          IconButton(
-            splashRadius: 22,
-            icon: const Icon(Icons.done_all_rounded, color: AppColors.textDark, size: 22),
-            tooltip: 'Tandai Semua Dibaca',
-            onPressed: _markAllAsRead,
-          ),
-          IconButton(
-            splashRadius: 22,
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textDark, size: 22),
-            tooltip: 'Pengaturan Notifikasi',
-            onPressed: _openSettings,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // BANNER SISTEM PROTEKSI AKTIF
-  // ==========================================
-  Widget _buildProtectionBanner() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEBF7F1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFC7EED9), width: 1.2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Icon Perisai dengan Titik Hijau
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD2F4E5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.shield_outlined,
-                  color: Color(0xFF1E8256),
-                  size: 23,
-                ),
-              ),
-              Positioned(
-                top: 2,
-                right: 2,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1E8256),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 14),
-
-          // Teks Status
+          _round(Icons.arrow_back_ios_new_rounded, () => Navigator.of(context).maybePop(), size: 17),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Sistem Proteksi Aktif',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF134E34),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1E8256),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '3 Guardian Terhubung',
-                  style: GoogleFonts.nunito(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1E8256),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Margonda, Beji & Rute Perjalanan Terpantau',
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF4C7561),
-                  ),
-                ),
+                Flexible(child: Text('Notifikasi', maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.h(26, color: Aj.plum))),
+                if (_unreadCount > 0) ...[
+                  const SizedBox(width: 8),
+                  AjPill('$_unreadCount Baru', bg: Aj.plum, fg: Colors.white, size: 11),
+                ],
               ],
             ),
           ),
-
-          // Badge Live
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD2F4E5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'Live',
-              style: GoogleFonts.nunito(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1E8256),
-              ),
+          Tooltip(
+            message: 'Tandai semua dibaca',
+            child: _round(
+              Icons.done_all_rounded,
+              _markAll,
+              color: _unreadCount > 0 ? Aj.plum : Aj.mintDeep,
             ),
           ),
+          const SizedBox(width: 8),
+          _round(Icons.tune_rounded, () => pfPush(context, const NotificationSettingsScreen())),
         ],
       ),
     );
   }
 
-  // ==========================================
-  // FILTER CHIPS (Semua, Darurat & Sensor, Saling Pantau)
-  // ==========================================
-  Widget _buildFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: [
-          _buildFilterChip(
-            index: 0,
-            label: 'Semua',
-            count: '4',
-            badgeBg: _selectedFilter == 0 ? const Color(0x33FFFFFF) : const Color(0xFFE5DFEC),
-            badgeTextColor: _selectedFilter == 0 ? Colors.white : AppColors.plum,
-          ),
-          const SizedBox(width: 10),
-          _buildFilterChip(
-            index: 1,
-            label: 'Darurat & Sensor',
-            count: '1',
-            badgeBg: _selectedFilter == 1 ? const Color(0x33FFFFFF) : const Color(0xFFFFDDE4),
-            badgeTextColor: _selectedFilter == 1 ? Colors.white : const Color(0xFFD32F2F),
-          ),
-          const SizedBox(width: 10),
-          _buildFilterChip(
-            index: 2,
-            label: 'Saling Pantau',
-            count: '2',
-            badgeBg: _selectedFilter == 2 ? const Color(0x33FFFFFF) : const Color(0xFFEFE9F6),
-            badgeTextColor: _selectedFilter == 2 ? Colors.white : const Color(0xFF6B428A),
-          ),
-        ],
+  Widget _round(IconData icon, VoidCallback onTap, {double size = 21, Color color = Aj.plum}) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFF3E1E9)),
+          boxShadow: Aj.softShadow,
+        ),
+        child: Icon(icon, size: size, color: color),
       ),
     );
   }
 
-  Widget _buildFilterChip({
-    required int index,
-    required String label,
-    required String count,
-    required Color badgeBg,
-    required Color badgeTextColor,
-  }) {
-    final isSelected = _selectedFilter == index;
-    return PressScale(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() => _selectedFilter = index);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF382947) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF382947) : const Color(0xFFE6E3EA),
-              width: 1.2,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF382947).withAlpha(46),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.nunito(
-                  fontSize: 13.5,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                  color: isSelected ? Colors.white : const Color(0xFF5A5263),
-                ),
+  // ── Filter ────────────────────────────────────────────────
+  Widget _filterBar() {
+    return SizedBox(
+      height: 46,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
+        itemCount: _filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final sel = i == _filter;
+          final f = _filters[i];
+          final un = _unreadOf(f.$3);
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _filter = i;
+                _open = null;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: sel ? const LinearGradient(colors: [Color(0xFF4A1D5C), Color(0xFF6A2E80)]) : null,
+                color: sel ? null : Colors.white,
+                border: Border.all(color: sel ? Colors.transparent : const Color(0xFFF3E1E9), width: 1.2),
+                boxShadow: sel ? const [BoxShadow(color: Color(0x334A1D5C), blurRadius: 10, offset: Offset(0, 4))] : null,
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  count,
-                  style: GoogleFonts.nunito(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: badgeTextColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // SECTION HEADER
-  // ==========================================
-  Widget _buildSectionHeader({required String title, required String subtitle}) {
-    return Row(
-      children: [
-        Container(
-          width: 5,
-          height: 5,
-          decoration: const BoxDecoration(
-            color: Color(0xFF4A4252),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 7),
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF4A4252),
-            letterSpacing: 0.6,
-          ),
-        ),
-        const Spacer(),
-        Text(
-          subtitle,
-          style: GoogleFonts.nunito(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textMuted,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==========================================
-  // CARD 1: Guncangan Terdeteksi • Salsabila Rahma
-  // ==========================================
-  Widget _buildShakeAlertCard() {
-    return _buildNotificationCardWrapper(
-      accentColor: const Color(0xFFE53935), // Garis merah tebal di tepi kiri
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon Guncangan / Alarm Merah
-              Stack(
-                clipBehavior: Clip.none,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFDECEF),
-                      borderRadius: BorderRadius.circular(14),
+                  Icon(f.$2, size: 16, color: sel ? Colors.white : Aj.muted),
+                  const SizedBox(width: 6),
+                  Text(f.$1, style: Aj.b(13, color: sel ? Colors.white : Aj.muted, w: FontWeight.w800)),
+                  if (un > 0) ...[
+                    const SizedBox(width: 7),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(color: sel ? const Color(0x33FFFFFF) : Aj.sosSoft, borderRadius: BorderRadius.circular(10)),
+                      child: Text('$un', style: Aj.b(11, color: sel ? Colors.white : Aj.sos, w: FontWeight.w900)),
                     ),
-                    child: const Icon(
-                      Icons.crisis_alert_rounded,
-                      color: Color(0xFFD32F2F),
-                      size: 24,
-                    ),
-                  ),
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD32F2F),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
-              const SizedBox(width: 14),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-              // Judul & Waktu
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
-                                height: 1.3,
-                              ),
-                              children: const [
-                                TextSpan(text: 'Guncangan Terdeteksi • \n'),
-                                TextSpan(
-                                  text: 'Salsabila Rahma',
-                                  style: TextStyle(fontWeight: FontWeight.w800),
+  Widget _groupLabel(String text, int unread) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
+      child: Row(
+        children: [
+          Container(width: 6, height: 6, decoration: const BoxDecoration(color: Aj.berry, shape: BoxShape.circle)),
+          const SizedBox(width: 8),
+          Text(text.toUpperCase(), style: Aj.b(11.5, color: Aj.plum, w: FontWeight.w900).copyWith(letterSpacing: 0.8)),
+          const Spacer(),
+          if (unread > 0) Text('$unread belum dibaca', style: Aj.b(11.5, color: Aj.muted, w: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  // ── Kartu notifikasi ──────────────────────────────────────
+  Widget _card(_N n, int i) {
+    final open = _open == n.id;
+    return AnimatedEntrance(
+      index: i.clamp(0, 8),
+      child: Dismissible(
+        key: ValueKey(n.id),
+        direction: DismissDirection.endToStart,
+        onDismissed: (_) => _dismiss(n),
+        background: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(right: 24),
+          alignment: Alignment.centerRight,
+          decoration: BoxDecoration(color: Aj.sosSoft, borderRadius: BorderRadius.circular(24)),
+          child: const Icon(Icons.delete_outline_rounded, color: Aj.sos, size: 26),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: GestureDetector(
+            onTap: () => _toggle(n),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: n.unread ? const LinearGradient(colors: [Color(0xFFFFE4EC), Color(0xFFFFF3F7)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
+                color: n.unread ? null : Colors.white,
+                border: Border.all(
+                  color: n.urgent && n.unread ? Aj.sos.withValues(alpha: 0.45) : (n.unread ? const Color(0xFFF6D3DE) : const Color(0xFFF3E1E9)),
+                  width: n.urgent && n.unread ? 1.5 : 1.2,
+                ),
+                boxShadow: Aj.softShadow,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _leading(n),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(n.title, style: Aj.b(14.5, color: n.unread ? Aj.plum : Aj.ink, w: FontWeight.w900, height: 1.25)),
+                                ),
+                                const SizedBox(width: 8),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(n.time, style: Aj.b(11, color: Aj.muted, w: FontWeight.w700)),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                        Text(
-                          '15 mnt lalu',
-                          style: GoogleFonts.nunito(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Deskripsi
-          Text(
-            'Sensor akselerometer mendeteksi sentakan cepat 3x di sekitar Jl. Margonda Raya. Status terkini telah dikonfirmasi aman oleh Salsa.',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              height: 1.5,
-              color: const Color(0xFF534C5A),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Baris Aksi Bawah
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF8F1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 14,
-                      color: Color(0xFF1E8256),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Dibatalkan Pengguna',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E8256),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              PressScale(
-                child: GestureDetector(
-                  onTap: () => _showLocationDialog('Salsabila Rahma', 'Jl. Margonda Raya'),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Cek Lokasi',
-                        style: GoogleFonts.nunito(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                            if (n.urgent) ...[
+                              const SizedBox(height: 5),
+                              const AjPill('Penting', bg: Aj.sosSoft, fg: Aj.sos, icon: Icons.priority_high_rounded, size: 10.5),
+                            ],
+                            const SizedBox(height: 5),
+                            Text(n.body, style: Aj.b(12.5, color: const Color(0xFF5E5663), height: 1.5)),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 15,
-                        color: AppColors.textDark,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: AnimatedRotation(
+                          turns: open ? 0.25 : 0,
+                          duration: const Duration(milliseconds: 220),
+                          child: const Icon(Icons.chevron_right_rounded, color: Aj.muted, size: 22),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // CARD 2: Ibu Nurhayati Tiba di Rumah
-  // ==========================================
-  Widget _buildGeofenceArrivalCard() {
-    return _buildNotificationCardWrapper(
-      accentColor: const Color(0xFF1E8256), // Garis hijau tebal di tepi kiri
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon Lokasi Pin Hijau
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F6EE),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.location_on_outlined,
-                      color: Color(0xFF1E8256),
-                      size: 24,
-                    ),
-                  ),
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1E8256),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: open ? _expanded(n) : const SizedBox(width: double.infinity),
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-
-              // Judul & Waktu
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Ibu Nurhayati Tiba di Rumah',
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '1 jam lalu',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Deskripsi
-          Text(
-            'Memasuki radius aman geofence Rumah (Jl. Melati No. 4). Rute perjalanan otomatis ditutup dengan aman.',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              height: 1.5,
-              color: const Color(0xFF534C5A),
             ),
           ),
-          const SizedBox(height: 14),
+        ),
+      ),
+    );
+  }
 
-          // Tags Bawah (Geofence + Baterai)
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF8F1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.shield_outlined,
-                      size: 13,
-                      color: Color(0xFF1E8256),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Geofence Rumah (Jl. Melati)',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E8256),
-                      ),
-                    ),
-                  ],
-                ),
+  Widget _leading(_N n) {
+    return SizedBox(
+      width: 54,
+      height: 54,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (n.mascot)
+            const PfAvatar(size: 54)
+          else
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: n.bg,
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: Aj.softShadow,
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF1F4),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.battery_charging_full_rounded,
-                      size: 14,
-                      color: Color(0xFF1E8256),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '89%',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF495057),
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(n.icon, color: n.fg, size: 26),
+            ),
+          if (n.unread)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(color: Aj.sos, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
-  // ==========================================
-  // CARD 3: Koneksi Saling Pantau Aktif • Dinda Kirana
-  // ==========================================
-  Widget _buildMutualEscortCard() {
-    return _buildNotificationCardWrapper(
-      accentColor: const Color(0xFFE8E5EE), // Garis halus lavender
+  Widget _expanded(_N n) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Avatar Inisial DK
-              Stack(
-                clipBehavior: Clip.none,
+          if (n.detail != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.75), borderRadius: BorderRadius.circular(16)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE5FA),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'DK',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF5C2880),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 9,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E8256),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                    ),
-                  ),
+                  const Icon(Icons.lightbulb_outline_rounded, size: 16, color: Aj.berry),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(n.detail!, style: Aj.b(12, color: Aj.muted, height: 1.5))),
                 ],
               ),
-              const SizedBox(width: 14),
-
-              // Judul & Waktu
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                            height: 1.3,
-                          ),
-                          children: const [
-                            TextSpan(text: 'Koneksi Saling Pantau Aktif\n'),
-                            TextSpan(
-                              text: '• Dinda Kirana',
-                              style: TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Kemarin 20:15',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Deskripsi
-          Text(
-            'Pertukaran akses saling jaga telah disetujui secara timbal balik. Lokasi presisi aktif otomatis selama mode perjalanan malam dinyalakan.',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              height: 1.5,
-              color: const Color(0xFF534C5A),
             ),
-          ),
-          const SizedBox(height: 14),
-
-          // Chips Bawah (Timbal Balik + Verifikasi KTP)
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4EEFC),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.sync_alt_rounded,
-                      size: 14,
-                      color: Color(0xFF5C2880),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Aktif Timbal Balik',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF5C2880),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF8F1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1E8256),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Terverifikasi KTP',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E8256),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // CARD 4: Baterai Rendah • Salsabila Rahma (18%)
-  // ==========================================
-  Widget _buildLowBatteryCard() {
-    return _buildNotificationCardWrapper(
-      accentColor: const Color(0xFFF59E0B), // Garis oranye kuning di tepi kiri
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon Baterai Peringatan
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.battery_alert_rounded,
-                  color: Color(0xFFB45309),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Judul & Waktu
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                            height: 1.3,
-                          ),
-                          children: const [
-                            TextSpan(text: 'Baterai Rendah • '),
-                            TextSpan(
-                              text: 'Salsabila\nRahma (18%)',
-                              style: TextStyle(
-                                color: Color(0xFFB45309),
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Kemarin 19:30',
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 10),
-
-          // Deskripsi
-          Text(
-            'Daya ponsel Salsa berada di bawah 20% saat berada 2,4 km di luar kos. Mode hemat daya darurat telah disarankan otomatis.',
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              height: 1.5,
-              color: const Color(0xFF534C5A),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Aksi Bawah: Sisa Daya 18% & Ingatkan via WhatsApp
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF9C3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Sisa Daya 18%',
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF854D0E),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              PressScale(
-                child: GestureDetector(
-                  onTap: () => _sendWhatsAppReminder('Salsabila Rahma'),
+              for (final a in n.acts)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    ajSnack(context, a.toast, icon: a.icon);
+                  },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFDE8EE),
                       borderRadius: BorderRadius.circular(20),
+                      gradient: const LinearGradient(colors: [Color(0xFF4A1D5C), Color(0xFF6A2E80)]),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.chat_bubble_outline_rounded,
-                          size: 14,
-                          color: Color(0xFF9C274E),
-                        ),
+                        Icon(a.icon, size: 15, color: Colors.white),
                         const SizedBox(width: 6),
-                        Text(
-                          'Ingatkan via WhatsApp',
-                          style: GoogleFonts.nunito(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF9C274E),
-                          ),
-                        ),
+                        Text(a.label, style: Aj.b(12, color: Colors.white, w: FontWeight.w800)),
                       ],
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // HELPER CARD CONTAINER WITH LEFT STRIPE ACCENT
-  // ==========================================
-  Widget _buildNotificationCardWrapper({
-    required Widget child,
-    required Color accentColor,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2C243B).withAlpha(10),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: const Color(0xFFF0ECF4),
-          width: 1.2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Garis Aksen Vertikal di Kiri
-              Container(
-                width: 4.5,
-                color: accentColor,
-              ),
-              // Konten Kartu
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: child,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // FOOTER (PRIVASI ENKRIPSI & PENGATURAN SUARA DARURAT)
-  // ==========================================
-  Widget _buildFooter() {
-    return Column(
-      children: [
-        // Icon Gembok Terkunci
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Color(0xFFEFEBF3),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.lock_outline_rounded,
-            size: 20,
-            color: Color(0xFF6B6275),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Teks Informasi Enkripsi
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            'Riwayat terenkripsi & dihapus otomatis setelah 30\nhari demi menjaga privasi penuh Anda.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(
-              fontSize: 12.5,
-              height: 1.45,
-              color: const Color(0xFF6B6275),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Link Pengaturan Notifikasi & Suara Darurat
-        PressScale(
-          child: GestureDetector(
-            onTap: _openSettings,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Pengaturan Notifikasi & Suara Darurat',
-                  style: GoogleFonts.nunito(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.plum,
+              GestureDetector(
+                onTap: () => _dismiss(n),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF3E1E9))),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.delete_outline_rounded, size: 15, color: Aj.muted),
+                      const SizedBox(width: 6),
+                      Text('Hapus', style: Aj.b(12, color: Aj.muted, w: FontWeight.w800)),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 12,
-                  color: AppColors.plum,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 12),
-      ],
+        ],
+      ),
+    );
+  }
+
+  // ── Kosong ────────────────────────────────────────────────
+  Widget _empty() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          const PfOwl(pfOwlThinking, size: 130, fallback: Icons.notifications_off_outlined),
+          const SizedBox(height: 10),
+          Text('Belum ada notifikasi', style: Aj.h(16, color: Aj.plum)),
+          const SizedBox(height: 4),
+          Text('Semua tenang di sini. Kami akan kabari kalau ada info penting.', textAlign: TextAlign.center, style: Aj.b(12.5, color: Aj.muted, height: 1.45)),
+        ],
+      ),
     );
   }
 }
