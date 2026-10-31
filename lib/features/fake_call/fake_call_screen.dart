@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,31 +9,39 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:amanjalan/core/theme/app_colors.dart';
 import 'package:amanjalan/features/emergency/emergency_screen.dart';
 
-// ---- Warna layar panggilan ----
-const _darkTop = Color(0xFF4A3445);
-const _darkBottom = Color(0xFF2F2540);
-const _pageBg = Color(0xFFFCFAFC);
-const _panelBg = Color(0xFFF7F3F1);
-const _tileBg = Color(0xFFEFEBEA);
-const _declineColor = Color(0xFF8B3A4A);
-const _acceptColor = Color(0xFF2D4A3A);
+// ====== Palet: meniru aplikasi Telepon iPhone (gradasi ungu-navy + kaca) ======
+const _bgTop = Color(0xFF47447E);
+const _bgMid = Color(0xFF2B2950);
+const _bgBottom = Color(0xFF141226);
+const _green = Color(0xFF30D158);
+const _red = Color(0xFFFF453A);
+const _dim = Color(0xFFB4B0CC);
+const _silhouette = Color(0xFFD3D3DA);
 
 enum _CallPhase { ringing, inCall }
 
-/// Satu langkah percakapan: kalimat "Mama" + contekan jawaban pengguna.
+enum _InCallView { main, keypad, contacts }
+
+/// Satu langkah percakapan: kalimat "lawan bicara" + contekan jawaban pengguna.
 class _ScriptStep {
   final String line;
   final List<String> replies;
   const _ScriptStep(this.line, this.replies);
 }
 
+/// Layar panggilan palsu bergaya aplikasi Telepon iPhone.
+///
+/// Sengaja TANPA logo / tulisan aplikasi di layar utama supaya orang di sekitar
+/// tidak curiga. Contekan jawaban disembunyikan di laci kecil di bawah.
 class FakeCallScreen extends StatefulWidget {
   final String callerName;
   final String callerEmoji;
-  final String callerLabel; // keterangan di layar panggilan masuk
-  final String callerNumber; // nomor yang tampil saat panggilan berlangsung
-  final String location; // posisi terpantau
-  final int guardianCount;
+  final String callerLabel; // hanya tampil di laci contekan
+  final String callerNumber; // nomor yang tampil
+  final String callType; // keterangan di bawah nama, mis. "seluler"
+  final String myName; // nama pemilik HP (daftar Kontak)
+  final String location; // posisi terpantau (laci contekan)
+  final int guardianCount; // jumlah wali (laci contekan)
   final String scenarioTitle;
   final List<EmergencyRecipient>? emergencyRecipients;
 
@@ -41,6 +51,8 @@ class FakeCallScreen extends StatefulWidget {
     this.callerEmoji = '❤️',
     this.callerLabel = 'Wali Utama (Panggilan Rumah)',
     this.callerNumber = '+62 812-3456-7890',
+    this.callType = 'seluler',
+    this.myName = 'Saya',
     this.location = 'Jl. Senopati Raya',
     this.guardianCount = 3,
     this.scenarioTitle = 'Dijemput di Depan Gang',
@@ -52,7 +64,7 @@ class FakeCallScreen extends StatefulWidget {
 }
 
 class _FakeCallScreenState extends State<FakeCallScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Skenario percakapan (TODO: pindahkan ke data/daftar skenario pilihan pengguna)
   static const _script = [
     _ScriptStep(
@@ -81,24 +93,41 @@ class _FakeCallScreenState extends State<FakeCallScreen>
     ),
   ];
 
-  late final AnimationController _pulse;
+  static const _keys = [
+    ('1', ''),
+    ('2', 'ABC'),
+    ('3', 'DEF'),
+    ('4', 'GHI'),
+    ('5', 'JKL'),
+    ('6', 'MNO'),
+    ('7', 'PQRS'),
+    ('8', 'TUV'),
+    ('9', 'WXYZ'),
+    ('*', ''),
+    ('0', '+'),
+    ('#', ''),
+  ];
+
+  late final AnimationController _ring;
   Timer? _ringTimer;
   Timer? _callTimer;
 
   _CallPhase _phase = _CallPhase.ringing;
+  _InCallView _view = _InCallView.main;
   int _seconds = 0;
   bool _muted = false;
-  bool _speaker = true;
-  bool _scriptOpen = true;
+  bool _speaker = false;
+  bool _helperOpen = false;
   int _step = 0;
+  String _dialed = '';
 
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(
+    _ring = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
 
     // TODO: putar nada dering sungguhan (paket audioplayers / just_audio).
     // Sementara hanya getar berkala seperti panggilan masuk.
@@ -113,7 +142,7 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   void dispose() {
     _ringTimer?.cancel();
     _callTimer?.cancel();
-    _pulse.dispose();
+    _ring.dispose();
     super.dispose();
   }
 
@@ -121,7 +150,7 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   void _accept() {
     HapticFeedback.lightImpact();
     _ringTimer?.cancel();
-    // TODO: putar suara "Mama" otomatis (text-to-speech / rekaman) sesuai skenario.
+    // TODO: putar suara lawan bicara otomatis (TTS / rekaman) sesuai skenario.
     setState(() => _phase = _CallPhase.inCall);
     _callTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _seconds++);
@@ -155,14 +184,20 @@ class _FakeCallScreenState extends State<FakeCallScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.plum,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: const Color(0xFF3A3560),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         content: Text(
           message,
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(
+              fontWeight: FontWeight.w500, color: Colors.white),
         ),
       ),
     );
+  }
+
+  void _setView(_InCallView v) {
+    HapticFeedback.selectionClick();
+    setState(() => _view = v);
   }
 
   String get _timeText {
@@ -176,17 +211,151 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   Widget build(BuildContext context) {
     final ringing = _phase == _CallPhase.ringing;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: ringing ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: _pageBg,
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
-          child: ringing
-              ? KeyedSubtree(key: const ValueKey('ring'), child: _buildRinging())
-              : KeyedSubtree(
-                  key: const ValueKey('call'), child: _buildInCall()),
+        backgroundColor: _bgBottom,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_bgTop, _bgMid, _bgBottom],
+              stops: [0.0, 0.55, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              child: ringing
+                  ? KeyedSubtree(
+                      key: const ValueKey('ring'), child: _buildRinging())
+                  : KeyedSubtree(
+                      key: const ValueKey('call'), child: _buildInCall()),
+            ),
+          ),
         ),
       ),
+    );
+  }
+
+  // ---------- Komponen kaca ----------
+  Widget _glassCircle({
+    required double size,
+    required Widget child,
+    bool active = false,
+    VoidCallback? onTap,
+    double opacity = 0.14,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active
+                  ? Colors.white.withOpacity(0.92)
+                  : Colors.white.withOpacity(opacity),
+              border: Border.all(
+                  color: Colors.white.withOpacity(active ? 0 : 0.10)),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _glassPill({
+    required Widget child,
+    VoidCallback? onTap,
+    EdgeInsets padding =
+        const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Avatar siluet kaca, sama seperti kontak tanpa foto di iPhone.
+  Widget _avatar(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.16),
+            Colors.white.withOpacity(0.04),
+          ],
+        ),
+        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF8E8AD8).withOpacity(0.25),
+              blurRadius: 40,
+              spreadRadius: 2),
+        ],
+      ),
+      child: ClipOval(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Transform.translate(
+            offset: Offset(0, size * 0.08),
+            child: Icon(Icons.person_rounded,
+                size: size * 0.86, color: _silhouette),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _callerName({double size = 32}) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: widget.callerName,
+            style: GoogleFonts.inter(
+              fontSize: size,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.4,
+              color: Colors.white,
+            ),
+          ),
+          if (widget.callerEmoji.isNotEmpty)
+            TextSpan(
+              text: ' ${widget.callerEmoji}',
+              style: TextStyle(fontSize: size * 0.88),
+            ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 
@@ -196,264 +365,109 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   Widget _buildRinging() {
     return Column(
       children: [
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_darkTop, _darkBottom],
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(44)),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: LayoutBuilder(
-                builder: (context, c) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: c.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 14, 22, 20),
-                        child: Column(
-                          children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: _networkChip(),
-                            ),
-                            const SizedBox(height: 14),
-                            _buildRingingAvatar(),
-                            const SizedBox(height: 14),
-                            _callerNameText(color: Colors.white),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.softPink,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Panggilan Suara Masuk...',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 17,
-                                    color: const Color(0xFFE6D7E2),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.callerLabel,
-                              style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                color: const Color(0xFFB5A8BD),
-                              ),
-                            ),
-                            const Spacer(),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _quickAction(
-                                    Icons.alarm_rounded,
-                                    'Ingatkan Nanti',
-                                    () => _snack('Pengingat belum diaktifkan'),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: _quickAction(
-                                    Icons.sms_outlined,
-                                    'Kirim Pesan',
-                                    () => _snack('Balasan cepat belum diaktifkan'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 26),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _declineButton(),
-                                _acceptButton(),
-                              ],
-                            ),
-                            const SizedBox(height: 22),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.shield_outlined,
-                                    size: 17, color: Color(0xFFB5A8BD)),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    'Proteksi Perjalanan Nyata • amanJalan Guard',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 13,
-                                      color: const Color(0xFFB5A8BD),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+        const Spacer(flex: 2),
+        _buildRingingAvatar(),
+        const SizedBox(height: 18),
+        _callerName(size: 34),
+        const SizedBox(height: 6),
+        Text(widget.callerNumber,
+            style: GoogleFonts.inter(fontSize: 16, color: _dim)),
+        const SizedBox(height: 2),
+        Text(widget.callType,
+            style: GoogleFonts.inter(
+                fontSize: 13, color: _dim.withOpacity(0.75))),
+        const Spacer(flex: 3),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _glassPill(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                _snack('Pengingat diatur');
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.alarm_rounded, size: 19, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text('Ingatkan Saya',
+                      style: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white)),
+                ],
               ),
             ),
+            const SizedBox(width: 12),
+            _glassPill(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                _snack('Pesan cepat dikirim');
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.chat_bubble_rounded,
+                      size: 18, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text('Pesan',
+                      style: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 36),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 48),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _declineButton(),
+              _acceptButton(),
+            ],
           ),
         ),
-        _buildTipsPanel(),
+        const SizedBox(height: 44),
       ],
-    );
-  }
-
-  Widget _networkChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0x1AFFFFFF),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.cell_tower_rounded,
-              size: 18, color: Color(0xFFD9CCDC)),
-          const SizedBox(width: 8),
-          Text(
-            'ID: 4G-btm',
-            style: GoogleFonts.nunito(
-              fontSize: 14,
-              color: const Color(0xFFD9CCDC),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildRingingAvatar() {
     return SizedBox(
-      height: 270,
+      width: 280,
+      height: 280,
       child: AnimatedBuilder(
-        animation: _pulse,
+        animation: _ring,
         builder: (context, _) {
-          final t = Curves.easeInOut.transform(_pulse.value);
+          Widget wave(double t) {
+            return Transform.scale(
+              scale: 0.68 + 0.32 * t,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity((1 - t) * 0.20),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Stack(
             alignment: Alignment.center,
             children: [
-              Transform.scale(
-                scale: 1 + 0.05 * t,
-                child: Container(
-                  width: 262,
-                  height: 262,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0x14FFFFFF),
-                  ),
-                ),
-              ),
-              Container(
-                width: 224,
-                height: 224,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0x1AFFFFFF),
-                ),
-              ),
-              Container(
-                width: 168,
-                height: 168,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFE6E2E1),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  widget.callerName.substring(0, 1).toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 64,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFB9AFB5),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 58,
-                bottom: 40,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: _acceptColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.phone_in_talk_rounded,
-                      size: 22, color: AppColors.sage),
-                ),
-              ),
+              wave(_ring.value),
+              wave((_ring.value + 0.33) % 1.0),
+              wave((_ring.value + 0.66) % 1.0),
+              _avatar(190),
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _callerNameText({required Color color}) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: widget.callerName,
-            style: GoogleFonts.poppins(
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-          TextSpan(
-            text: ' ${widget.callerEmoji}',
-            style: const TextStyle(fontSize: 32),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
-    return Material(
-      color: const Color(0x26FFFFFF),
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Column(
-            children: [
-              Icon(icon, size: 24, color: const Color(0xFFE6DCEB)),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  color: const Color(0xFFE6DCEB),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -464,24 +478,25 @@ class _FakeCallScreenState extends State<FakeCallScreen>
         GestureDetector(
           onTap: _endCall,
           child: Container(
-            width: 84,
-            height: 84,
-            decoration: const BoxDecoration(
-              color: _declineColor,
+            width: 78,
+            height: 78,
+            decoration: BoxDecoration(
+              color: _red,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                    color: _red.withOpacity(0.45),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8)),
+              ],
             ),
             child: const Icon(Icons.call_end_rounded,
-                size: 36, color: Color(0xFFFFD9E0)),
+                size: 34, color: Colors.white),
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          'Tolak',
-          style: GoogleFonts.nunito(
-            fontSize: 16,
-            color: const Color(0xFFE6DCEB),
-          ),
-        ),
+        Text('Tolak',
+            style: GoogleFonts.inter(fontSize: 14.5, color: Colors.white70)),
       ],
     );
   }
@@ -489,169 +504,58 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   Widget _acceptButton() {
     return Column(
       children: [
-        AnimatedBuilder(
-          animation: _pulse,
-          builder: (context, child) {
-            final t = Curves.easeInOut.transform(_pulse.value);
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 84 + 22 * t,
-                  height: 84 + 22 * t,
-                  decoration: const BoxDecoration(
-                    color: Color(0x332D4A3A),
-                    shape: BoxShape.circle,
+        SizedBox(
+          width: 108,
+          height: 78,
+          child: AnimatedBuilder(
+            animation: _ring,
+            builder: (context, _) {
+              final t = _ring.value;
+              final wiggle =
+                  t < 0.45 ? math.sin(t * 2 * math.pi * 6) * 0.22 : 0.0;
+              return Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 78 + 30 * t,
+                    height: 78 + 30 * t,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _green.withOpacity((1 - t) * 0.30),
+                    ),
                   ),
-                ),
-                child!,
-              ],
-            );
-          },
-          child: GestureDetector(
-            onTap: _accept,
-            child: Container(
-              width: 84,
-              height: 84,
-              decoration: const BoxDecoration(
-                color: _acceptColor,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.call_rounded,
-                  size: 36, color: AppColors.sage),
-            ),
+                  GestureDetector(
+                    onTap: _accept,
+                    child: Container(
+                      width: 78,
+                      height: 78,
+                      decoration: BoxDecoration(
+                        color: _green,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                              color: _green.withOpacity(0.45),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8)),
+                        ],
+                      ),
+                      child: Transform.rotate(
+                        angle: wiggle,
+                        child: const Icon(Icons.call_rounded,
+                            size: 34, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Terima',
-          style: GoogleFonts.nunito(
-            fontSize: 16,
-            color: const Color(0xFFE6DCEB),
-          ),
-        ),
+        const SizedBox(height: 10),
+        Text('Terima',
+            style: GoogleFonts.inter(fontSize: 14.5, color: Colors.white70)),
       ],
-    );
-  }
-
-  Widget _buildTipsPanel() {
-    return Container(
-      width: double.infinity,
-      color: _pageBg,
-      padding: EdgeInsets.fromLTRB(
-          20, 16, 20, 16 + MediaQuery.of(context).padding.bottom),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: _panelBg,
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.softPink,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.lightbulb_outline_rounded,
-                      size: 22, color: AppColors.textDark),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tips Alibi Pelindung Diri',
-                        style: GoogleFonts.nunito(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Gunakan panggilan ini sebagai alasan wajar untuk mempercepat langkah menuju tempat ramai, toko berlampu terang, atau pos satpam terdekat.',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          height: 1.45,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _infoTile(
-                    Icons.location_on_outlined,
-                    'Posisi Terpantau',
-                    widget.location,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _infoTile(
-                    Icons.groups_outlined,
-                    'Wali Terhubung',
-                    '${widget.guardianCount} Kontak Aktif',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infoTile(IconData icon, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: _tileBg,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 22, color: AppColors.plum),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-                Text(
-                  value,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -659,369 +563,72 @@ class _FakeCallScreenState extends State<FakeCallScreen>
   // FASE 2: PANGGILAN BERLANGSUNG
   // =====================================================================
   Widget _buildInCall() {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        child: Column(
-          children: [
-            _activeChip(),
-            const SizedBox(height: 18),
-            _buildCallAvatar(),
-            const SizedBox(height: 10),
-            _callerNameText(color: AppColors.plumDeep),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.sage,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.graphic_eq_rounded,
-                          size: 16, color: Color(0xFF2E5B3C)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'HD Voice',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: const Color(0xFF2E5B3C),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  widget.callerNumber,
-                  style: GoogleFonts.nunito(
-                    fontSize: 17,
-                    color: AppColors.textDark,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _timeText,
-              style: GoogleFonts.poppins(
-                fontSize: 36,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 2,
-                color: AppColors.textDark,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildScriptCard(),
-            const SizedBox(height: 22),
-            _buildControls(),
-            const SizedBox(height: 22),
-            _buildEndButton(),
-            const SizedBox(height: 14),
-            _buildProtocolNote(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _activeChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5B4B5C),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: const BoxDecoration(
-              color: Color(0xFFA9E0BC),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Text(
-              'Panggilan Samaran Aktif • Sinyal Terpantau',
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.nunito(
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCallAvatar() {
-    return SizedBox(
-      width: 150,
-      height: 150,
-      child: Stack(
-        children: [
-          Container(
-            width: 144,
-            height: 144,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFF3EFEF), Color(0xFFC9C3C4)],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              widget.callerName.substring(0, 1).toUpperCase(),
-              style: GoogleFonts.poppins(
-                fontSize: 54,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFA79EA2),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 8,
-            bottom: 6,
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1F2E27),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.favorite_rounded,
-                  size: 20, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------- Kartu contekan skenario ----------
-  Widget _buildScriptCard() {
-    final step = _script[_step];
-    final isLast = _step == _script.length - 1;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x144A1D5C),
-            blurRadius: 20,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header (ketuk untuk buka/tutup)
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() => _scriptOpen = !_scriptOpen),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _tileBg,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: const BoxDecoration(
-                      color: AppColors.softPink,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.volume_up_rounded,
-                        size: 22, color: Color(0xFFB83A5E)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'SUARA ${widget.callerName.toUpperCase()} (OTOMATIS)',
-                          style: GoogleFonts.nunito(
-                            fontSize: 13,
-                            letterSpacing: 1,
-                            color: const Color(0xFF8B3A5E),
-                          ),
-                        ),
-                        Text(
-                          'Skenario: ${widget.scenarioTitle}',
-                          style: GoogleFonts.nunito(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: _scriptOpen ? 0 : 0.5,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.keyboard_arrow_up_rounded,
-                        size: 26, color: AppColors.textDark),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
+    Widget body;
+    switch (_view) {
+      case _InCallView.keypad:
+        body = _buildKeypadView();
+        break;
+      case _InCallView.contacts:
+        body = _buildContactsView();
+        break;
+      case _InCallView.main:
+        body = _buildMainView();
+        break;
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
-            alignment: Alignment.topCenter,
-            child: !_scriptOpen
-                ? const SizedBox(width: double.infinity)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: _tileBg,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.record_voice_over_outlined,
-                                size: 22, color: Color(0xFF8B3A5E)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                '“${step.line}”',
-                                style: GoogleFonts.nunito(
-                                  fontSize: 16,
-                                  height: 1.4,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Bocoran Jawaban Kamu (Ucapkan santai):',
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      for (final reply in step.replies)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 9),
-                            decoration: BoxDecoration(
-                              color: _tileBg,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.chat_bubble_outline_rounded,
-                                    size: 16, color: AppColors.textMuted),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    '“$reply”',
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 15,
-                                      color: AppColors.textDark,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: isLast
-                            ? null
-                            : () {
-                                HapticFeedback.selectionClick();
-                                setState(() => _step++);
-                              },
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: isLast ? 0.4 : 1,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppColors.plumDeep,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.skip_next_rounded,
-                                    size: 18, color: Colors.white),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Kalimat Lanjutan',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            child: KeyedSubtree(key: ValueKey(_view), child: body),
           ),
+        ),
+        _buildHelper(),
+      ],
+    );
+  }
+
+  // ---------- Tampilan utama ----------
+  Widget _buildMainView() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 12),
+      child: Column(
+        children: [
+          _avatar(124),
+          const SizedBox(height: 18),
+          _callerName(size: 30),
+          const SizedBox(height: 6),
+          Text(_timeText,
+              style: GoogleFonts.inter(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w400,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: _dim)),
+          const SizedBox(height: 40),
+          _buildControls(),
+          const SizedBox(height: 32),
+          _buildEndButton(),
         ],
       ),
     );
   }
 
-  // ---------- Tombol kontrol panggilan ----------
   Widget _buildControls() {
     return Column(
       children: [
         Row(
           children: [
             _control(
-              _muted ? Icons.mic_off_rounded : Icons.mic_none_rounded,
-              'Bisu',
+              _muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+              'Bisukan',
               active: _muted,
               onTap: () => setState(() => _muted = !_muted),
             ),
             _control(
               Icons.dialpad_rounded,
-              'Papan Tombol',
-              onTap: () => _snack('Papan tombol tidak diperlukan di sini'),
+              'Keypad',
+              onTap: () => _setView(_InCallView.keypad),
             ),
             _control(
               Icons.volume_up_rounded,
@@ -1031,19 +638,19 @@ class _FakeCallScreenState extends State<FakeCallScreen>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Row(
           children: [
             _control(
-              Icons.add_call,
+              Icons.person_add_alt_1_rounded,
               'Tambah',
-              onTap: () => _snack('Fitur ini tidak tersedia saat panggilan samaran'),
+              onTap: () => _snack('Tidak tersedia saat ini'),
             ),
-            _control(Icons.videocam_outlined, 'FaceTime', disabled: true),
+            _control(Icons.videocam_rounded, 'FaceTime', disabled: true),
             _control(
-              Icons.contacts_outlined,
+              Icons.account_circle_rounded,
               'Kontak',
-              onTap: () => _snack('Fitur ini tidak tersedia saat panggilan samaran'),
+              onTap: () => _setView(_InCallView.contacts),
             ),
           ],
         ),
@@ -1058,46 +665,204 @@ class _FakeCallScreenState extends State<FakeCallScreen>
     bool disabled = false,
     VoidCallback? onTap,
   }) {
-    final fg = active
-        ? Colors.white
-        : (disabled ? const Color(0xFF9A95A6) : AppColors.textDark);
     return Expanded(
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: disabled
-                ? null
-                : () {
-                    HapticFeedback.selectionClick();
-                    onTap?.call();
-                  },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: active ? AppColors.plumDeep : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x144A1D5C),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(icon, size: 26, color: fg),
+      child: Opacity(
+        opacity: disabled ? 0.4 : 1,
+        child: Column(
+          children: [
+            _glassCircle(
+              size: 72,
+              active: active,
+              onTap: disabled
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      onTap?.call();
+                    },
+              child: Icon(icon,
+                  size: 30,
+                  color: active ? const Color(0xFF1B1830) : Colors.white),
+            ),
+            const SizedBox(height: 9),
+            Text(label,
+                style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- Keypad (seperti aplikasi Telepon) ----------
+  Widget _buildKeypadView() {
+    return Column(
+      children: [
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 52,
+          child: Center(
+            child: Text(
+              _dialed,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: GoogleFonts.nunito(
-              fontSize: 14,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-              color: disabled
-                  ? const Color(0xFF9A95A6)
-                  : (active ? AppColors.plumDeep : AppColors.textDark),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: 1,
+            children: [
+              for (final k in _keys) _keyButton(k.$1, k.$2),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        _buildEndButton(),
+        const Spacer(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
+          child: Row(
+            children: [
+              const Spacer(),
+              GestureDetector(
+                onTap: () => _setView(_InCallView.main),
+                child: Text('Sembunyikan',
+                    style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _keyButton(String digit, String letters) {
+    return LayoutBuilder(
+      builder: (context, c) => _glassCircle(
+        size: c.maxWidth,
+        opacity: 0.13,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            if (_dialed.length < 18) _dialed += digit;
+          });
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(digit,
+                style: GoogleFonts.inter(
+                    fontSize: digit == '*' ? 38 : 32,
+                    fontWeight: FontWeight.w400,
+                    height: 1.0,
+                    color: Colors.white)),
+            if (letters.isNotEmpty)
+              Text(letters,
+                  style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.5,
+                      color: Colors.white70)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- Kontak (seperti aplikasi Telepon) ----------
+  Widget _buildContactsView() {
+    Widget tile(String name, String sub, {String? trailing}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.14),
+                border: Border.all(color: Colors.white.withOpacity(0.10)),
+              ),
+              child: const Icon(Icons.person_rounded,
+                  size: 30, color: _silhouette),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                  if (sub.isNotEmpty)
+                    Text(sub,
+                        style: GoogleFonts.inter(fontSize: 13, color: _dim)),
+                ],
+              ),
+            ),
+            if (trailing != null)
+              Text(trailing,
+                  style: GoogleFonts.inter(fontSize: 14, color: _dim)),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _glassCircle(
+                size: 44,
+                onTap: () => _setView(_InCallView.main),
+                child: const Icon(Icons.chevron_left_rounded,
+                    size: 30, color: Colors.white),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text('Kontak',
+                      style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                ),
+              ),
+              _glassCircle(
+                size: 44,
+                onTap: () => _snack('Tidak tersedia saat panggilan'),
+                child: const Icon(Icons.add_rounded,
+                    size: 26, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Expanded(
+            child: ListView(
+              physics: const BouncingScrollPhysics(),
+              children: [
+                tile(widget.myName, 'Kartu Saya'),
+                Divider(color: Colors.white.withOpacity(0.08), height: 1),
+                tile(widget.callerName, widget.callerNumber),
+                Divider(color: Colors.white.withOpacity(0.08), height: 1),
+                tile(widget.myName, '', trailing: 'saya'),
+              ],
             ),
           ),
         ],
@@ -1107,73 +872,220 @@ class _FakeCallScreenState extends State<FakeCallScreen>
 
   // ---------- Akhiri panggilan + protokol senyap ----------
   Widget _buildEndButton() {
-    return GestureDetector(
-      onTap: _endCall, // ketuk sekali: akhiri panggilan
-      onDoubleTap: _silentEmergency, // ketuk 2x cepat: kirim sinyal darurat
-      child: Container(
-        width: 66,
-        height: 66,
-        decoration: const BoxDecoration(
-          color: AppColors.emergencyRed,
-          shape: BoxShape.circle,
+    return Center(
+      child: GestureDetector(
+        onTap: _endCall, // ketuk sekali: akhiri panggilan
+        onDoubleTap: _silentEmergency, // ketuk 2x cepat: kirim sinyal darurat
+        child: Container(
+          width: 76,
+          height: 76,
+          decoration: BoxDecoration(
+            color: _red,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                  color: _red.withOpacity(0.45),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8)),
+            ],
+          ),
+          child:
+              const Icon(Icons.call_end_rounded, size: 34, color: Colors.white),
         ),
-        child: const Icon(Icons.call_end_rounded,
-            size: 30, color: Color(0xFFFFE0E0)),
       ),
     );
   }
 
-  Widget _buildProtocolNote() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: _panelBg,
-        borderRadius: BorderRadius.circular(18),
+  // ---------- Laci contekan (tersembunyi secara default) ----------
+  Widget _buildHelper() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B1830),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(color: Colors.white.withOpacity(0.07)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _helperOpen = !_helperOpen);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _helperOpen ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 220),
+                      child: Icon(Icons.keyboard_arrow_up_rounded,
+                          size: 22, color: Colors.white.withOpacity(0.35)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_helperOpen)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 330),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: _buildHelperBody(),
+                ),
+              ),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    );
+  }
+
+  Widget _buildHelperBody() {
+    final step = _script[_step];
+    final isLast = _step == _script.length - 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${widget.scenarioTitle.toUpperCase()} • ${widget.callerLabel}',
+            style: GoogleFonts.inter(
+                fontSize: 11, letterSpacing: 0.8, color: _dim)),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.record_voice_over_outlined,
+                  size: 20, color: Color(0xFFFFB3C0)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('“${step.line}”',
+                    style: GoogleFonts.inter(
+                        fontSize: 14.5, height: 1.4, color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text('Jawab santai:',
+            style: GoogleFonts.inter(fontSize: 12.5, color: _dim)),
+        const SizedBox(height: 8),
+        for (final reply in step.replies)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.chat_bubble_outline_rounded,
+                      size: 15, color: _dim),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text('“$reply”',
+                        style: GoogleFonts.inter(
+                            fontSize: 13.5, color: Colors.white)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: isLast
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _step++);
+                    },
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: isLast ? 0.35 : 1,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.plum,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.skip_next_rounded,
+                          size: 18, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text('Kalimat lanjutan',
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.location_on_outlined, size: 15, color: _dim),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text('${widget.location} • ${widget.guardianCount} wali',
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 12, color: _dim)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _red.withOpacity(0.14),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
             children: [
               const Icon(Icons.shield_outlined,
-                  size: 18, color: Color(0xFF8B3A5E)),
-              const SizedBox(width: 6),
-              Text(
-                'Protokol Darurat Senyap',
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  color: const Color(0xFF8B3A5E),
+                  size: 18, color: Color(0xFFFF9FA8)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Darurat senyap: ketuk tombol merah 2x cepat untuk kirim SOS + lokasi live ke wali.',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: const Color(0xFFFFB3C0)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text.rich(
-            TextSpan(
-              style: GoogleFonts.nunito(
-                fontSize: 13.5,
-                height: 1.4,
-                color: AppColors.textMuted,
-              ),
-              children: const [
-                TextSpan(text: 'Tekan tombol merah '),
-                TextSpan(
-                  text: '2x cepat',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                TextSpan(
-                    text:
-                        ' untuk kirim sinyal darurat & Live GPS ke Wali amanJalan.'),
-              ],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
