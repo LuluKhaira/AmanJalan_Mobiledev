@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dibutuhkan untuk sidik jari / Face ID saat mematikan SOS -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    
     <application
         android:label="amanjalan_mobiledev"
         android:name="${applicationName}"

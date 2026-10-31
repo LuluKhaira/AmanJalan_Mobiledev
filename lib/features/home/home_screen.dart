@@ -5,15 +5,15 @@ import 'package:amanjalan/core/services/auth_service.dart';
 import 'package:amanjalan/core/widgets/custom_bottom_nav.dart';
 import 'package:amanjalan/features/auth/login_screen.dart';
 import 'package:amanjalan/features/emergency/emergency_screen.dart';
+import 'package:amanjalan/features/emergency/sos_screen.dart';
 import 'package:amanjalan/features/fake_call/fake_call_screen.dart';
 import 'package:amanjalan/features/home/aj_data.dart';
 import 'package:amanjalan/features/home/widgets/beranda_tab.dart';
 import 'package:amanjalan/features/home/manage_guardian_screen.dart';
-import 'package:amanjalan/features/home/map_tab.dart';
+import 'package:amanjalan/features/proteksi/proteksi_tab.dart';
 import 'package:amanjalan/features/perjalanan/perjalanan_tab.dart';
 import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 import 'package:amanjalan/features/profile/screens/profile_tab.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,12 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
+  /// Buka layar SOS baru (tahan tombol -> otomatis lanjut ke EmergencyScreen).
   void _openEmergency() {
     HapticFeedback.heavyImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => EmergencyScreen(recipients: _emergencyRecipients),
+        builder: (_) => SosScreen(recipients: _emergencyRecipients),
       ),
     );
   }
@@ -78,7 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => FakeCallScreen(
-          callerName: guardians.isNotEmpty ? guardians.first.name : 'Ibu Nurhayati',
+          callerName:
+              guardians.isNotEmpty ? guardians.first.name : 'Ibu Nurhayati',
           guardianCount: guardians.length,
           emergencyRecipients: _emergencyRecipients,
         ),
@@ -120,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onManageGuardians: _openGuardianManager,
                 onAddGuardian: _openAddGuardian,
               ),
-              MapTab(
+              ProteksiTab(
                 onBackToHome: () => _goToTab(0),
                 onProfileTap: () => _goToTab(3),
               ),
