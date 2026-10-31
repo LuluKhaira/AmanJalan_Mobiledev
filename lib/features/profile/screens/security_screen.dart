@@ -59,8 +59,8 @@ class SecurityScreen extends StatelessWidget {
           children: [
             PfTile(
               icon: Icons.pin_outlined,
-              title: 'Ubah PIN',
-              sub: 'Atur PIN untuk login aplikasi.',
+              title: 'Ubah Password',
+              sub: 'Atur password untuk login aplikasi.',
               onTap: () => _changePin(context),
             ),
             PfTile(
@@ -147,18 +147,18 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  // ── Ubah PIN ─────────────────────────────────────────────
+  // ── Ubah Password ─────────────────────────────────────────────
   void _changePin(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => AjSheet(
-        title: 'Ubah PIN',
+        title: 'Ubah Password',
         child: _PinSheet(
           onDone: () {
             Navigator.pop(ctx);
-            ajSnack(context, 'PIN berhasil diperbarui', icon: Icons.check_circle_rounded);
+            ajSnack(context, 'Password berhasil diperbarui', icon: Icons.check_circle_rounded);
           },
         ),
       ),
@@ -318,9 +318,9 @@ class _PinSheetState extends State<_PinSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _field('PIN lama', _old),
-          _field('PIN baru (6 digit)', _new),
-          _field('Ulangi PIN baru', _confirm),
+          _field('Password lama', _old),
+          _field('Password baru (6 karakter)', _new),
+          _field('Ulangi Password baru', _confirm),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -332,7 +332,7 @@ class _PinSheetState extends State<_PinSheet> {
                 ],
               ),
             ),
-          PfPrimaryButton('Simpan PIN', onTap: _submit),
+          PfPrimaryButton('Simpan Password', onTap: _submit),
         ],
       ),
     );

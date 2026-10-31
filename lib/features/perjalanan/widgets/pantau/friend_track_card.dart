@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
-import 'package:amanjalan/features/perjalanan/widgets/pantau/radar_sheet.dart';
+import 'package:amanjalan/features/perjalanan/screens/pantau_maps_screen.dart';
+import 'package:amanjalan/features/perjalanan/widgets/pantau/friend_data.dart';
 
-/// Kartu teman yang sedang berjalan (peta mini bergerak + radar live).
+/// Kartu teman yang sedang berjalan.
+/// Urutan: siapa + tiba → pakai apa & rute apa → di mana → angka penting → aksi.
 class FriendTrackCard extends StatefulWidget {
   const FriendTrackCard({super.key});
 
@@ -32,103 +34,168 @@ class _FriendTrackCardState extends State<FriendTrackCard> {
     super.dispose();
   }
 
+  void _openMaps() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PantauMapsScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
+    const m = FriendTrip.mode;
     return AjCard(
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1) Siapa + perkiraan tiba
           Row(
             children: [
               const AjAvatar(
-                name: 'Salsabila Rahma',
-                size: 52,
+                name: FriendTrip.name,
+                size: 50,
                 online: true,
                 color: Color(0xFFF0F4E6),
-                imageUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
+                imageUrl: FriendTrip.photo,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Salsabila Rahma', style: Aj.h(16)),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      const AjPill('Teman Kos', bg: Aj.sand, fg: Aj.muted),
-                      const SizedBox(width: 6),
-                      Flexible(child: Text('• Sedang Pulang', overflow: TextOverflow.ellipsis, style: Aj.b(12, color: Aj.berry, w: FontWeight.w800))),
-                    ]),
+                    Text(FriendTrip.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.h(16)),
+                    const SizedBox(height: 2),
+                    Text('${FriendTrip.relation} • menuju ${FriendTrip.to}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.b(12, color: Aj.muted)),
                   ],
                 ),
               ),
-              const AjPill('Jl. Margonda', bg: Aj.blush, fg: Aj.berry),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('${FriendTrip.etaMin} mnt', style: Aj.h(21, color: Aj.plum)),
+                  Text('perkiraan tiba', style: Aj.b(10.5, color: Aj.muted)),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          const Row(
+
+          // 2) Pakai apa + rute apa
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              _StatTile(Icons.battery_5_bar_rounded, 'Baterai', '78%'),
-              SizedBox(width: 8),
-              _StatTile(Icons.gps_fixed_rounded, 'GPS Akurat', '±3m'),
-              SizedBox(width: 8),
-              _StatTile(Icons.directions_walk_rounded, 'Kecepatan', '4.1 km/j'),
+              _Chip(m.icon, m.verb, bg: Aj.blush, fg: Aj.berry),
+              _Chip(Icons.shield_outlined, 'Rute ${FriendTrip.routeName} • Skor ${FriendTrip.score}', bg: Aj.mint, fg: Aj.mintDeep),
             ],
           ),
           const SizedBox(height: 12),
-          Stack(
-            children: [
-              RouteMap(height: 150, progress: _p),
-              Positioned(
-                left: 10,
-                right: 10,
-                bottom: 10,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                        decoration: BoxDecoration(color: const Color(0xE6FFFFFF), borderRadius: BorderRadius.circular(12)),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.navigation_outlined, size: 14, color: Aj.plum),
-                            const SizedBox(width: 6),
-                            Flexible(child: Text('Kampus UI → Kos Melati', overflow: TextOverflow.ellipsis, style: Aj.b(11.5, w: FontWeight.w700))),
-                          ],
-                        ),
+
+          // 3) Peta mini (ketuk = buka peta penuh)
+          GestureDetector(
+            onTap: _openMaps,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Stack(
+                children: [
+                  RouteMap(height: 132, progress: _p),
+                  Positioned(
+                    left: 10,
+                    top: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(color: const Color(0xE6FFFFFF), borderRadius: BorderRadius.circular(10)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(width: 7, height: 7, decoration: const BoxDecoration(color: Aj.sos, shape: BoxShape.circle)),
+                          const SizedBox(width: 5),
+                          Text('LIVE', style: Aj.b(10.5, w: FontWeight.w800)),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
+                  ),
+                  Positioned(
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                      decoration: BoxDecoration(color: Aj.plum, borderRadius: BorderRadius.circular(12)),
-                      child: Text('Est. 8 mnt lagi', style: Aj.b(11.5, color: Colors.white, w: FontWeight.w800)),
+                      decoration: BoxDecoration(color: const Color(0xE6FFFFFF), borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.navigation_outlined, size: 14, color: Aj.plum),
+                          const SizedBox(width: 6),
+                          Flexible(child: Text('${FriendTrip.from} → ${FriendTrip.to}', overflow: TextOverflow.ellipsis, style: Aj.b(11.5, w: FontWeight.w700))),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 12),
+
+          // 4) Angka penting: satu panel, tiga kolom
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(16)),
+            child: Row(
+              children: [
+                const _Stat(FriendTrip.distanceLeft, 'Sisa jarak'),
+                const _Divider(),
+                _Stat(m.speed, 'Kecepatan'),
+                const _Divider(),
+                const _Stat(FriendTrip.battery, 'Baterai'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 5) Posisi sekarang + peringatan rute
+          Row(
+            children: [
+              const Icon(Icons.place_outlined, size: 16, color: Aj.berry),
+              const SizedBox(width: 6),
+              Expanded(child: Text('Sekarang di ${FriendTrip.street} • GPS ${FriendTrip.gps}', maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.b(12, color: Aj.muted, w: FontWeight.w700))),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFE65100)),
+              const SizedBox(width: 6),
+              Expanded(child: Text('${FriendTrip.warnings} titik perlu waspada di rute ini', maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.b(12, color: const Color(0xFFE65100), w: FontWeight.w700))),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 6) Aksi
           Row(
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => showRadarSheet(context),
+                  onPressed: _openMaps,
                   style: FilledButton.styleFrom(
                     backgroundColor: Aj.plum,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  icon: const Icon(Icons.radar_rounded, size: 20),
-                  label: Text('Buka Radar Live', style: Aj.b(14, color: Colors.white, w: FontWeight.w800)),
+                  icon: const Icon(Icons.map_rounded, size: 20),
+                  label: Text('Buka Maps', style: Aj.b(14, color: Colors.white, w: FontWeight.w800)),
                 ),
               ),
               const SizedBox(width: 8),
-              _SquareBtn(Icons.call_outlined, Aj.sand, Aj.muted, () => ajSnack(context, 'Memanggil Salsabila…', icon: Icons.call_rounded)),
-              const SizedBox(width: 8),
-              _SquareBtn(Icons.campaign_outlined, Aj.blush, Aj.berry, () => ajSnack(context, 'Bunyi peringatan dikirim ke ponsel Salsa', icon: Icons.campaign_rounded)),
+              InkWell(
+                onTap: () => ajSnack(context, 'Memanggil ${FriendTrip.firstName}…', icon: Icons.call_rounded),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.call_outlined, color: Aj.plum, size: 21),
+                ),
+              ),
             ],
           ),
         ],
@@ -137,57 +204,52 @@ class _FriendTrackCardState extends State<FriendTrackCard> {
   }
 }
 
-class _StatTile extends StatelessWidget {
+class _Chip extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final String value;
-  const _StatTile(this.icon, this.label, this.value);
+  final String text;
+  final Color bg;
+  final Color fg;
+  const _Chip(this.icon, this.text, {required this.bg, required this.fg});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
-        decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 16, color: Aj.berry),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: Aj.b(10.5, color: Aj.muted)),
-                  Text(value, style: Aj.h(13.5), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: fg),
+          const SizedBox(width: 6),
+          Text(text, style: Aj.b(12, color: fg, w: FontWeight.w800)),
+        ],
       ),
     );
   }
 }
 
-class _SquareBtn extends StatelessWidget {
-  final IconData icon;
-  final Color bg;
-  final Color fg;
-  final VoidCallback onTap;
-  const _SquareBtn(this.icon, this.bg, this.fg, this.onTap);
+class _Stat extends StatelessWidget {
+  final String value;
+  final String label;
+  const _Stat(this.value, this.label);
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
-        child: Icon(icon, color: fg, size: 21),
+    return Expanded(
+      child: Column(
+        children: [
+          FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: Aj.h(14.5))),
+          const SizedBox(height: 2),
+          Text(label, style: Aj.b(10.5, color: Aj.muted)),
+        ],
       ),
     );
   }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) => Container(width: 1, height: 28, color: const Color(0x1F000000));
 }

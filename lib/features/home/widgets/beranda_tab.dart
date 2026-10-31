@@ -126,6 +126,7 @@ class BerandaTab extends StatefulWidget {
   final VoidCallback onOpenMap;
   final VoidCallback onOpenEmergency;
   final VoidCallback onOpenFakeCall;
+  final VoidCallback onOpenReport;
   final VoidCallback onManageGuardians;
   final VoidCallback onAddGuardian;
 
@@ -136,6 +137,7 @@ class BerandaTab extends StatefulWidget {
     required this.onOpenMap,
     required this.onOpenEmergency,
     required this.onOpenFakeCall,
+    required this.onOpenReport,
     required this.onManageGuardians,
     required this.onAddGuardian,
   });
@@ -176,38 +178,6 @@ class _BerandaTabState extends State<BerandaTab> {
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
     await showStreakCelebration(context, result);
-  }
-
-  void _openReport() {
-    const items = <(IconData, String)>[
-      (Icons.lightbulb_outline_rounded, 'Lampu jalan mati'),
-      (Icons.visibility_off_outlined, 'Area sepi / gelap'),
-      (Icons.person_search_outlined, 'Orang mencurigakan'),
-      (Icons.build_outlined, 'Fasilitas rusak'),
-    ];
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AjSheet(
-        title: 'Lapor Kejadian',
-        child: Column(
-          children: [
-            for (final it in items)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: AjIconBubble(it.$1, bg: Aj.blush, fg: Aj.berry, size: 40),
-                title: Text(it.$2, style: Aj.b(14.5, w: FontWeight.w800)),
-                subtitle: Text('Kirim ke pengelola kampus', style: Aj.b(12, color: Aj.muted)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Aj.muted),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  ajSnack(context, 'Laporan "${it.$2}" terkirim (simulasi)', icon: Icons.campaign_rounded);
-                },
-              ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _call(String label, String number) {
@@ -644,7 +614,7 @@ class _BerandaTabState extends State<BerandaTab> {
           sub: 'Kejadian',
           bg: Aj.blush,
           fg: Aj.berry,
-          onTap: _openReport,
+          onTap: widget.onOpenReport,
         ),
         const SizedBox(width: 10),
         _QuickTile(
@@ -760,74 +730,74 @@ class _BerandaTabState extends State<BerandaTab> {
           child: KeyedSubtree(
             key: ValueKey(_modeIndex),
             child: AjCard(
-            radius: 22,
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AjIconBubble(m.icon, bg: m.bg, fg: m.fg, size: 44),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(child: Text(m.title, style: Aj.h(13.5), overflow: TextOverflow.ellipsis)),
-                              const SizedBox(width: 6),
-                              AjPill(m.tag, bg: m.bg, fg: m.fg, size: 9.5),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(m.desc, style: Aj.b(12, color: Aj.muted, height: 1.4)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (_modeIndex == 1) ...[
-                  const SizedBox(height: 12),
+              radius: 22,
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      AjIconBubble(m.icon, bg: m.bg, fg: m.fg, size: 44),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(12)),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.pin_outlined, size: 16, color: Aj.plum),
-                              const SizedBox(width: 6),
-                              Text(
-                                _plat.isEmpty ? 'Plat: Belum dicatat' : 'Plat: $_plat',
-                                style: Aj.b(12.5, color: _plat.isEmpty ? Aj.muted : Aj.plum, w: FontWeight.w800),
-                              ),
-                            ],
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(child: Text(m.title, style: Aj.h(13.5), overflow: TextOverflow.ellipsis)),
+                                const SizedBox(width: 6),
+                                AjPill(m.tag, bg: m.bg, fg: m.fg, size: 9.5),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(m.desc, style: Aj.b(12, color: Aj.muted, height: 1.4)),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton.icon(
-                        onPressed: _showPlatDialog,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Aj.plum,
-                          minimumSize: const Size(0, 40),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.edit_rounded, size: 14),
-                        label: Text(_plat.isEmpty ? 'Catat Plat' : 'Ubah Plat', style: Aj.b(12, color: Colors.white, w: FontWeight.w800)),
                       ),
                     ],
                   ),
+                  if (_modeIndex == 1) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(12)),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.pin_outlined, size: 16, color: Aj.plum),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _plat.isEmpty ? 'Plat: Belum dicatat' : 'Plat: $_plat',
+                                  style: Aj.b(12.5, color: _plat.isEmpty ? Aj.muted : Aj.plum, w: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          onPressed: _showPlatDialog,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Aj.plum,
+                            minimumSize: const Size(0, 40),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.edit_rounded, size: 14),
+                          label: Text(_plat.isEmpty ? 'Catat Plat' : 'Ubah Plat', style: Aj.b(12, color: Colors.white, w: FontWeight.w800)),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  _startButton(m),
                 ],
-                const SizedBox(height: 14),
-                _startButton(m),
-              ],
-            ),
+              ),
             ),
           ),
         ),

@@ -9,7 +9,10 @@ import 'package:amanjalan/features/perjalanan/perjalanan_actions.dart';
 import 'package:amanjalan/features/perjalanan/screens/tracking_screen.dart';
 import 'package:amanjalan/features/perjalanan/widgets/pj_widgets.dart';
 
-/// Halaman "Mulai Perjalanan": 4 langkah jelas → tombol Mulai.
+/// "Mulai Perjalanan" = mode PENDAMPING (berbasis orang).
+/// Beda dengan tab Proteksi yang berbasis PETA & RUTE (pilih rute teraman):
+/// di sini tidak ada peta/rute, fokusnya: ke mana, naik apa, siapa yang
+/// menemani, dan pengaman otomatis.
 class MulaiPerjalananScreen extends StatefulWidget {
   const MulaiPerjalananScreen({super.key});
 
@@ -63,18 +66,18 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                   children: [
                     _intro(),
-                    const SizedBox(height: 18),
-                    const PjStep(1, 'Tujuan Perjalanan'),
+                    const SizedBox(height: 20),
+                    const PjStep(1, 'Mau ke mana?'),
                     _destinationPicker(),
-                    const SizedBox(height: 18),
-                    const PjStep(2, 'Pilih Mode'),
+                    const SizedBox(height: 20),
+                    const PjStep(2, 'Naik apa?'),
                     _modePicker(),
-                    const SizedBox(height: 18),
-                    const PjStep(3, 'Estimasi Waktu', hint: 'otomatis'),
-                    _estimateCard(),
-                    const SizedBox(height: 18),
-                    const PjStep(4, 'Siapa yang Memantau?'),
+                    const SizedBox(height: 20),
+                    const PjStep(3, 'Siapa yang menemani?'),
                     _guardianCard(),
+                    const SizedBox(height: 20),
+                    const PjStep(4, 'Pengaman otomatis'),
+                    _safetyCard(),
                   ],
                 ),
               ),
@@ -87,27 +90,17 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
   }
 
   Widget _intro() {
-    return AjCard(
-      color: Aj.blush,
-      shadow: false,
-      radius: 24,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          const PjMascot(size: 72),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Perjalanan Aman Dimulai dari Sini', style: Aj.h(15, color: Aj.berry, height: 1.2)),
-                const SizedBox(height: 4),
-                Text('Pastikan kamu berada di tempat yang aman sebelum memulai.', style: Aj.b(12.5, color: Aj.muted, height: 1.3)),
-              ],
-            ),
+    return Row(
+      children: [
+        const AjIconBubble(Icons.people_alt_rounded, bg: Aj.blush, fg: Aj.berry, size: 42),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Jalan ditemani Guardian. Mereka memantau langkahmu live sampai kamu tiba.',
+            style: Aj.b(13, color: Aj.muted, height: 1.35),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -149,7 +142,6 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          // titik awal → tujuan
           Row(
             children: [
               Column(
@@ -164,10 +156,8 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('TITIK AWAL', style: Aj.b(10, color: Aj.muted, w: FontWeight.w800)),
                     Text(d.from, style: Aj.b(14, w: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    Text('TUJUAN', style: Aj.b(10, color: Aj.muted, w: FontWeight.w800)),
+                    const SizedBox(height: 14),
                     Text(d.to, style: Aj.b(14, w: FontWeight.w800)),
                   ],
                 ),
@@ -175,13 +165,11 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const RouteMap(height: 120, progress: 0.0),
-          const SizedBox(height: 10),
           Row(
             children: [
-              const AjIconBubble(Icons.local_police_outlined, bg: Aj.mint, fg: Aj.mintDeep, size: 34),
-              const SizedBox(width: 10),
-              Expanded(child: Text('${d.havens} Pos Titik Aman di sepanjang rute', style: Aj.b(12.5, w: FontWeight.w700))),
+              const Icon(Icons.local_police_outlined, size: 16, color: Aj.mintDeep),
+              const SizedBox(width: 6),
+              Text('${d.havens} Pos Titik Aman di sepanjang rute', style: Aj.b(12, color: Aj.mintDeep, w: FontWeight.w700)),
             ],
           ),
         ],
@@ -223,55 +211,20 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
     );
   }
 
-  Widget _estimateCard() {
-    final d = _selected;
-    final arrive = DateTime.now().add(Duration(minutes: d.minutes));
-    return AjCard(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('${d.minutes}', style: Aj.h(40, color: Aj.plum, height: 1)),
-                  const SizedBox(width: 6),
-                  Padding(padding: const EdgeInsets.only(bottom: 5), child: Text('menit', style: Aj.h(15, color: Aj.plum))),
-                ],
-              ),
-              Text('Tiba sekitar ${fmtTime(arrive)} WIB', style: Aj.b(12, color: Aj.muted)),
-            ],
-          ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AjPill(fmtDistance(d.meters), bg: Aj.sand, fg: Aj.ink, icon: Icons.straighten_rounded),
-              const SizedBox(height: 6),
-              AjPill(_mode.label, bg: Aj.blush, fg: Aj.berry, icon: _mode.icon),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _guardianCard() {
     return AjCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const TripGuardianStrip(),
+          const TripGuardianStrip(showTitle: false),
           const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(child: Text('Kirim lokasi live ke Guardian', style: Aj.b(13, w: FontWeight.w800))),
+              Expanded(child: Text('Kirim lokasi live ke mereka', style: Aj.b(13, w: FontWeight.w800))),
               Switch(
                 value: _shareLive,
-                activeColor: Aj.plum,
+                activeTrackColor: Aj.plum,
                 onChanged: (v) => setState(() => _shareLive = v),
               ),
             ],
@@ -289,14 +242,108 @@ class _MulaiPerjalananScreenState extends State<MulaiPerjalananScreen> {
     );
   }
 
+  Widget _safetyCard() {
+    return AjCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Column(
+        children: [
+          _SafetyRow(
+            icon: Icons.vibration_rounded,
+            bg: Aj.blush,
+            fg: Aj.berry,
+            title: 'Guncang 3x',
+            sub: 'Kirim peringatan darurat otomatis',
+            notifier: PerjalananSession.guncang,
+          ),
+          const Divider(height: 1, color: Aj.line),
+          _SafetyRow(
+            icon: Icons.location_on_outlined,
+            bg: Aj.mint,
+            fg: Aj.mintDeep,
+            title: 'Kabar tiba otomatis',
+            sub: 'Guardian diberi tahu saat kamu sampai',
+            notifier: PerjalananSession.autoArrive,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _bottomBar() {
+    final d = _selected;
+    final arrive = DateTime.now().add(Duration(minutes: d.minutes));
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 14 + MediaQuery.of(context).padding.bottom),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, -4))],
       ),
-      child: PjButton('Mulai Sekarang', icon: Icons.send_rounded, onTap: _start),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ValueListenableBuilder<List<Guardian>>(
+            valueListenable: GuardianStore.guardians,
+            builder: (context, list, _) => Text(
+              '±${d.minutes} mnt • ${fmtDistance(d.meters)} • tiba ${fmtTime(arrive)} • ${list.length} Guardian memantau',
+              textAlign: TextAlign.center,
+              style: Aj.b(12, color: Aj.muted, w: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: 10),
+          PjButton('Mulai Berjalan', icon: Icons.send_rounded, onTap: _start),
+        ],
+      ),
+    );
+  }
+}
+
+class _SafetyRow extends StatelessWidget {
+  final IconData icon;
+  final Color bg;
+  final Color fg;
+  final String title;
+  final String sub;
+  final ValueNotifier<bool> notifier;
+
+  const _SafetyRow({
+    required this.icon,
+    required this.bg,
+    required this.fg,
+    required this.title,
+    required this.sub,
+    required this.notifier,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: notifier,
+      builder: (context, on, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            AjIconBubble(icon, bg: bg, fg: fg, size: 38),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Aj.b(13.5, w: FontWeight.w800)),
+                  Text(sub, style: Aj.b(11.5, color: Aj.muted, height: 1.25)),
+                ],
+              ),
+            ),
+            Switch(
+              value: on,
+              activeTrackColor: Aj.plum,
+              onChanged: (v) {
+                HapticFeedback.selectionClick();
+                notifier.value = v;
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -327,4 +374,4 @@ class _AlreadyActive extends StatelessWidget {
       ),
     );
   }
-}
+} 

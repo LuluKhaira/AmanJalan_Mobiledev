@@ -8,7 +8,7 @@ import 'package:amanjalan/core/widgets/aj_common.dart';
 const Color kAjBg = Color(0xFFFCF8F6);
 const SizedBox kGap = SizedBox(height: 16);
 
-/// Scaffold standar: tombol back, judul, ikon bantuan, avatar.
+/// Scaffold standar: tombol back + judul.
 class AjSubScaffold extends StatelessWidget {
   final String title;
   final List<Widget> children;
@@ -31,16 +31,6 @@ class AjSubScaffold extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: Aj.h(19, color: Aj.plum)),
-                  ),
-                  IconButton(
-                    onPressed: () => ajSnack(context, 'Pusat bantuan segera hadir', icon: Icons.help_outline_rounded),
-                    icon: const Icon(Icons.help_outline_rounded, color: Aj.plum),
-                  ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(color: Aj.plum, shape: BoxShape.circle),
-                    child: const Icon(Icons.person_rounded, color: Colors.white, size: 20),
                   ),
                 ],
               ),

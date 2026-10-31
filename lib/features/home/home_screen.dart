@@ -12,6 +12,7 @@ import 'package:amanjalan/features/home/widgets/beranda_tab.dart';
 import 'package:amanjalan/features/home/manage_guardian_screen.dart';
 import 'package:amanjalan/features/proteksi/proteksi_tab.dart';
 import 'package:amanjalan/features/perjalanan/perjalanan_tab.dart';
+import 'package:amanjalan/features/perjalanan/screens/laporan_kejadian_screen.dart';
 import 'package:amanjalan/features/home/tambah_guardian_screen.dart';
 import 'package:amanjalan/features/profile/screens/profile_tab.dart';
 
@@ -88,6 +89,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Buka layar Laporan Kejadian (sama persis dengan yang di tab Perjalanan).
+  void _openReport() {
+    HapticFeedback.selectionClick();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LaporanKejadianScreen()),
+    );
+  }
+
   void _openGuardianManager() {
     HapticFeedback.selectionClick();
     Navigator.of(context).push(
@@ -119,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onOpenMap: () => _goToTab(1),
                 onOpenEmergency: _openEmergency,
                 onOpenFakeCall: _openFakeCall,
+                onOpenReport: _openReport,
                 onManageGuardians: _openGuardianManager,
                 onAddGuardian: _openAddGuardian,
               ),

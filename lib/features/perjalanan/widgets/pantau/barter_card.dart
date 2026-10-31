@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:amanjalan/core/theme/aj_theme.dart';
 import 'package:amanjalan/core/widgets/aj_common.dart';
 
-/// Banner "Barter Proteksi Aktif" + sheet detail.
+/// Strip tipis "Barter Proteksi" (satu baris) + sheet detail.
 class BarterCard extends StatelessWidget {
   const BarterCard({super.key});
 
@@ -11,36 +11,24 @@ class BarterCard extends StatelessWidget {
     return AjCard(
       color: Aj.blush,
       shadow: false,
-      radius: 22,
-      padding: const EdgeInsets.all(14),
+      radius: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      onTap: () => _sheet(context),
       child: Row(
         children: [
-          const AjIconBubble(Icons.sync_alt_rounded, bg: Aj.blushDeep, fg: Aj.berry, size: 44),
-          const SizedBox(width: 12),
+          const AjIconBubble(Icons.sync_alt_rounded, bg: Aj.blushDeep, fg: Aj.berry, size: 36),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  Flexible(child: Text('Barter Proteksi Aktif', style: Aj.h(13.5))),
-                  const SizedBox(width: 6),
-                  Container(width: 6, height: 6, decoration: const BoxDecoration(color: Aj.plum, shape: BoxShape.circle)),
-                ]),
-                const SizedBox(height: 2),
-                Text('Anda & Salsa saling menjaga real-time', style: Aj.b(12.5, color: Aj.muted)),
+                Text('Barter Proteksi aktif', style: Aj.h(13.5)),
+                Text('Kamu & Salsa saling menjaga', style: Aj.b(12, color: Aj.muted)),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _sheet(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-              child: Text('Detail', style: Aj.b(12.5, color: Aj.plum, w: FontWeight.w800)),
-            ),
-          ),
+          Text('Detail', style: Aj.b(12.5, color: Aj.plum, w: FontWeight.w800)),
+          const Icon(Icons.chevron_right_rounded, color: Aj.plum, size: 20),
         ],
       ),
     );

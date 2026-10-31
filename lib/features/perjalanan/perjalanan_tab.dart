@@ -49,8 +49,8 @@ class PerjalananTab extends StatelessWidget {
                 const AjSectionTitle('Alat Cepat'),
                 _quickTools(context),
                 const SizedBox(height: 22),
-                const AjSectionTitle('Sensor Siaga', trailing: _SensorHint()),
-                const _SensorRow(),
+                const AjSectionTitle('Perlindungan Otomatis'),
+                const _AutoProtectCard(),
                 const SizedBox(height: 22),
                 AjSectionTitle(
                   'Perjalanan Terakhir',
@@ -62,8 +62,6 @@ class PerjalananTab extends StatelessWidget {
                 _recent(context),
                 const SizedBox(height: 22),
                 _guardianCard(context),
-                const SizedBox(height: 16),
-                _tip(),
               ],
             ),
           ),
@@ -75,7 +73,7 @@ class PerjalananTab extends StatelessWidget {
   // ─── HERO ───────────────────────────────────────────────
   Widget _hero() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
+      padding: const EdgeInsets.fromLTRB(20, 14, 12, 14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFDEEF3), Color(0xFFF3E6F4)]),
@@ -88,45 +86,52 @@ class PerjalananTab extends StatelessWidget {
               children: [
                 Text('Perjalanan', style: Aj.h(26, color: Aj.plum)),
                 const SizedBox(height: 6),
-                Text('Mulai perjalananmu dengan aman. Kami akan memantau dan mendampingi setiap langkahmu.', style: Aj.b(13, color: Aj.muted, height: 1.4)),
+                Text('Jalan dengan tenang, kami temani tiap langkahmu.', style: Aj.b(13, color: Aj.muted, height: 1.4)),
               ],
             ),
           ),
           const SizedBox(width: 6),
-          const PjMascot(size: 104),
+          const PjMascot(size: 84),
         ],
       ),
     );
   }
 
-  // ─── DUA AKSI UTAMA ─────────────────────────────────────
+  // ─── DUA PERAN: berjalan & memantau ────────────────────
   Widget _mainActions(BuildContext context) {
-    return Column(
-      children: [
-        _BigAction(
-          icon: Icons.location_on_rounded,
-          title: 'Mulai Perjalanan',
-          subtitle: 'Aktifkan pelacakan lokasi dan mulai perjalananmu.',
-          bg: Aj.plum,
-          fg: Colors.white,
-          iconBg: const Color(0x26FFFFFF),
-          onTap: () => _push(context, const MulaiPerjalananScreen()),
-        ),
-        const SizedBox(height: 12),
-        ValueListenableBuilder<List<Guardian>>(
-          valueListenable: GuardianStore.guardians,
-          builder: (context, list, _) => _BigAction(
-            icon: Icons.groups_rounded,
-            title: 'Saya Memantau',
-            subtitle: 'Pantau orang terdekatmu secara real-time.',
-            badge: '${list.where((g) => g.online).length} online',
-            bg: Aj.mint,
-            fg: Aj.mintDeep,
-            iconBg: Colors.white,
-            onTap: () => _push(context, const PantauScreen()),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _RoleCard(
+              icon: Icons.directions_walk_rounded,
+              title: 'Saya Berjalan',
+              subtitle: 'Mulai perjalanan, Guardian ikut memantau.',
+              bg: Aj.plum,
+              fg: Colors.white,
+              iconBg: const Color(0x26FFFFFF),
+              onTap: () => _push(context, const MulaiPerjalananScreen()),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: ValueListenableBuilder<List<Guardian>>(
+              valueListenable: GuardianStore.guardians,
+              builder: (context, list, _) => _RoleCard(
+                icon: Icons.groups_rounded,
+                title: 'Saya Memantau',
+                subtitle: 'Pantau orang terdekatmu real-time.',
+                badge: '${list.where((g) => g.online).length} online',
+                bg: Aj.mint,
+                fg: Aj.mintDeep,
+                iconBg: Colors.white,
+                onTap: () => _push(context, const PantauScreen()),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -235,7 +240,7 @@ class PerjalananTab extends StatelessWidget {
             ),
           );
         }
-        return Column(children: [for (final t in list.take(3)) TripHistoryTile(t)]);
+        return Column(children: [for (final t in list.take(2)) TripHistoryTile(t)]);
       },
     );
   }
@@ -263,27 +268,13 @@ class PerjalananTab extends StatelessWidget {
       ),
     );
   }
-
-  Widget _tip() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Aj.blush, borderRadius: BorderRadius.circular(18)),
-      child: Row(
-        children: [
-          const Icon(Icons.favorite_rounded, color: Aj.berry, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text('Perjalanan lebih aman dengan AmanJalan. Karena kamu berharga.', style: Aj.b(12.5, color: Aj.berry, w: FontWeight.w700, height: 1.3))),
-        ],
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────
 // Komponen privat hub
 // ─────────────────────────────────────────────────────────────
 
-class _BigAction extends StatelessWidget {
+class _RoleCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -293,7 +284,7 @@ class _BigAction extends StatelessWidget {
   final Color iconBg;
   final VoidCallback onTap;
 
-  const _BigAction({
+  const _RoleCard({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -306,7 +297,8 @@ class _BigAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sub = fg == Colors.white ? const Color(0xCCFFFFFF) : fg;
+    final dark = bg == Aj.plum;
+    final sub = dark ? const Color(0xCCFFFFFF) : fg;
     return PressScale(
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
@@ -319,36 +311,30 @@ class _BigAction extends StatelessWidget {
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: bg == Aj.plum ? const [BoxShadow(color: Color(0x404A1D5C), blurRadius: 16, offset: Offset(0, 8))] : null,
+            boxShadow: dark ? const [BoxShadow(color: Color(0x404A1D5C), blurRadius: 16, offset: Offset(0, 8))] : null,
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                child: Icon(icon, color: bg == Aj.plum ? Colors.white : fg, size: 26),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                    child: Icon(icon, color: dark ? Colors.white : fg, size: 24),
+                  ),
+                  const Spacer(),
+                  if (badge != null) AjPill(badge!, bg: Colors.white, fg: fg, size: 10, dot: true),
+                ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(child: Text(title, style: Aj.h(16, color: fg))),
-                        if (badge != null) ...[
-                          const SizedBox(width: 8),
-                          AjPill(badge!, bg: Colors.white, fg: fg, size: 10, dot: true),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(subtitle, style: Aj.b(12.5, color: sub, height: 1.3)),
-                  ],
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: fg),
+              const SizedBox(height: 16),
+              Text(title, style: Aj.h(16, color: fg)),
+              const SizedBox(height: 4),
+              Text(subtitle, style: Aj.b(12, color: sub, height: 1.3)),
+              const Spacer(),
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerRight, child: Icon(Icons.arrow_forward_rounded, size: 20, color: fg)),
             ],
           ),
         ),
@@ -357,120 +343,123 @@ class _BigAction extends StatelessWidget {
   }
 }
 
-class _SensorHint extends StatelessWidget {
-  const _SensorHint();
-
-  @override
-  Widget build(BuildContext context) => Text('Otomatis melindungi', style: Aj.b(12, color: Aj.muted));
-}
-
-class _SensorRow extends StatelessWidget {
-  const _SensorRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: PerjalananSession.guncang,
-            builder: (context, on, _) => _SensorTile(
-              icon: Icons.vibration_rounded,
-              iconBg: Aj.blush,
-              iconFg: Aj.berry,
-              title: 'Guncang 3x',
-              sub: 'Deteksi Bahaya',
-              on: on,
-              onTap: () {
-                PerjalananSession.guncang.value = !on;
-                ajSnack(context, !on ? 'Deteksi guncangan aktif' : 'Deteksi guncangan dimatikan', icon: Icons.vibration_rounded);
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: PerjalananSession.autoArrive,
-            builder: (context, on, _) => _SensorTile(
-              icon: Icons.location_on_outlined,
-              iconBg: Aj.mint,
-              iconFg: Aj.mintDeep,
-              title: 'Auto Sampai',
-              sub: 'Geofence Kos',
-              on: on,
-              onTap: () {
-                PerjalananSession.autoArrive.value = !on;
-                ajSnack(context, !on ? 'Kabar tiba otomatis aktif' : 'Kabar tiba otomatis dimatikan', icon: Icons.location_on_outlined);
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: _SensorTile(
-            icon: Icons.battery_charging_full_rounded,
-            iconBg: Aj.sand,
-            iconFg: Aj.muted,
-            title: 'Baterai Aman',
-            sub: '~4.5 Jam Pantau',
-            badge: '85%',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SensorTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconBg;
-  final Color iconFg;
-  final String title;
-  final String sub;
-  final bool? on;
-  final String? badge;
-  final VoidCallback? onTap;
-
-  const _SensorTile({
-    required this.icon,
-    required this.iconBg,
-    required this.iconFg,
-    required this.title,
-    required this.sub,
-    this.on,
-    this.badge,
-    this.onTap,
-  });
+/// Tiga pengaman otomatis dalam satu kartu: jelas mana yang bisa di-switch.
+class _AutoProtectCard extends StatelessWidget {
+  const _AutoProtectCard();
 
   @override
   Widget build(BuildContext context) {
     return AjCard(
-      radius: 20,
-      padding: const EdgeInsets.all(12),
-      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AjIconBubble(icon, bg: iconBg, fg: iconFg, size: 36),
-              if (badge != null)
-                Text(badge!, style: Aj.h(12.5))
-              else
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(color: (on ?? true) ? const Color(0xFF1F6B45) : const Color(0xFFD5CDD0), shape: BoxShape.circle),
-                ),
-            ],
+          _toggle(
+            context,
+            icon: Icons.vibration_rounded,
+            bg: Aj.blush,
+            fg: Aj.berry,
+            title: 'Guncang 3x',
+            sub: 'Kirim peringatan darurat otomatis',
+            notifier: PerjalananSession.guncang,
+            onMsg: 'Deteksi guncangan aktif',
+            offMsg: 'Deteksi guncangan dimatikan',
           ),
-          const SizedBox(height: 14),
-          Text(title, style: Aj.b(13, w: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text(sub, style: Aj.b(11, color: Aj.muted)),
+          const Divider(height: 1, color: Aj.line),
+          _toggle(
+            context,
+            icon: Icons.location_on_outlined,
+            bg: Aj.mint,
+            fg: Aj.mintDeep,
+            title: 'Kabar Tiba Otomatis',
+            sub: 'Kirim "sudah sampai" saat masuk area kos',
+            notifier: PerjalananSession.autoArrive,
+            onMsg: 'Kabar tiba otomatis aktif',
+            offMsg: 'Kabar tiba otomatis dimatikan',
+          ),
+          const Divider(height: 1, color: Aj.line),
+          _ProtectTile(
+            icon: Icons.battery_charging_full_rounded,
+            bg: Aj.sand,
+            fg: Aj.muted,
+            title: 'Baterai Aman',
+            sub: 'Cukup untuk ±4,5 jam pemantauan',
+            trailing: Text('85%', style: Aj.h(14)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggle(
+    BuildContext context, {
+    required IconData icon,
+    required Color bg,
+    required Color fg,
+    required String title,
+    required String sub,
+    required ValueNotifier<bool> notifier,
+    required String onMsg,
+    required String offMsg,
+  }) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: notifier,
+      builder: (context, on, _) => _ProtectTile(
+        icon: icon,
+        bg: bg,
+        fg: fg,
+        title: title,
+        sub: sub,
+        trailing: Switch(
+          value: on,
+          activeTrackColor: Aj.plum,
+          onChanged: (v) {
+            HapticFeedback.selectionClick();
+            notifier.value = v;
+            ajSnack(context, v ? onMsg : offMsg, icon: icon);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ProtectTile extends StatelessWidget {
+  final IconData icon;
+  final Color bg;
+  final Color fg;
+  final String title;
+  final String sub;
+  final Widget trailing;
+
+  const _ProtectTile({
+    required this.icon,
+    required this.bg,
+    required this.fg,
+    required this.title,
+    required this.sub,
+    required this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          AjIconBubble(icon, bg: bg, fg: fg, size: 38),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Aj.b(13.5, w: FontWeight.w800)),
+                const SizedBox(height: 1),
+                Text(sub, style: Aj.b(11.5, color: Aj.muted, height: 1.25)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          trailing,
         ],
       ),
     );

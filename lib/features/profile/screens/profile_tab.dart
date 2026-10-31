@@ -65,7 +65,7 @@ class ProfileTab extends StatelessWidget {
                       PfTile(
                         icon: Icons.shield_outlined,
                         title: 'Keamanan',
-                        sub: 'PIN, verifikasi, dan pengaturan keamanan.',
+                        sub: 'Password, verifikasi, dan pengaturan keamanan.',
                         onTap: () => pfPush(context, const SecurityScreen()),
                       ),
                       PfTile(
