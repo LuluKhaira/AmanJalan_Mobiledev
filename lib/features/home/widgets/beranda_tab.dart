@@ -17,66 +17,6 @@ const _tipOwlAsset = 'assets/images/onboarding/owl_compass.png';
 // Data tampilan (dummy)
 // ─────────────────────────────────────────────────────────────
 
-class _Mode {
-  final IconData icon;
-  final String label;
-  final String badge;
-  final String title;
-  final String tag;
-  final String desc;
-  final String cta;
-  final Color bg;
-  final Color fg;
-
-  const _Mode({
-    required this.icon,
-    required this.label,
-    required this.badge,
-    required this.title,
-    required this.tag,
-    required this.desc,
-    required this.cta,
-    required this.bg,
-    required this.fg,
-  });
-}
-
-const _modes = [
-  _Mode(
-    icon: Icons.directions_walk_rounded,
-    label: 'Jalan Kaki',
-    badge: 'Rute Terang',
-    title: 'Proteksi Jalan Kaki Aktif',
-    tag: 'Sensor Saku',
-    desc: 'Deteksi guncangan saku siaga. Rute peta otomatis memprioritaskan jalan ramai berlampu terang.',
-    cta: 'Mulai Jalan Bareng',
-    bg: Color(0xFFE8F5E9),
-    fg: Color(0xFF2E7D4F),
-  ),
-  _Mode(
-    icon: Icons.two_wheeler_rounded,
-    label: 'Naik Motor',
-    badge: 'Simpan Plat',
-    title: 'Proteksi Naik Motor / Ojol',
-    tag: 'Simpan Plat',
-    desc: 'Catat plat nomor motor driver agar otomatis terkirim & tersimpan di HP Guardian.',
-    cta: 'Pantau Naik Motor',
-    bg: Color(0xFFFFF0D2),
-    fg: Color(0xFF9A6200),
-  ),
-  _Mode(
-    icon: Icons.directions_car_rounded,
-    label: 'Naik Mobil',
-    badge: 'Deviasi Rute',
-    title: 'Proteksi Mobil / Taksi Online',
-    tag: 'Anti-Deviasi',
-    desc: 'Alarm deviasi rute aktif. Sistem membunyikan peringatan bila kendaraan keluar dari jalur.',
-    cta: 'Pantau Naik Mobil',
-    bg: Color(0xFFE3F2FD),
-    fg: Color(0xFF1565C0),
-  ),
-];
-
 const _tips = [
   ('Perjalanan malam?', 'Pilih rute berpenerangan penuh dekat Gedung Utama & Lab TI ya!'),
   ('Aktifkan sensor saku', 'Guncang HP 3x untuk kirim sinyal darurat tanpa membuka aplikasi.'),
@@ -149,9 +89,7 @@ class BerandaTab extends StatefulWidget {
 class _BerandaTabState extends State<BerandaTab> {
   static const _maxGuardians = 5;
 
-  int _modeIndex = 0;
   int _tip = 0;
-  String _plat = '';
   // Status check-in hari ini dibaca dari StreakStore (satu sumber kebenaran).
   DateTime? get _checkedAt => StreakStore.state.value.checkedToday ? (StreakStore.state.value.checkedAt ?? DateTime.now()) : null;
 
@@ -178,76 +116,6 @@ class _BerandaTabState extends State<BerandaTab> {
     await Future<void>.delayed(const Duration(milliseconds: 450));
     if (!mounted) return;
     await showStreakCelebration(context, result);
-  }
-
-  void _call(String label, String number) {
-    HapticFeedback.mediumImpact();
-    ajSnack(context, 'Memanggil $label $number…', icon: Icons.phone_rounded);
-  }
-
-  void _showPlatDialog() {
-    final controller = TextEditingController(text: _plat);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Row(
-          children: [
-            const Icon(Icons.two_wheeler_rounded, color: Aj.plum),
-            const SizedBox(width: 8),
-            Text('Catat Plat Motor', style: Aj.h(16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Masukkan nomor plat motor driver (cth: BP 4521 SXZ) agar otomatis tersimpan & dibagikan ke Guardian.',
-              style: Aj.b(13, color: Aj.muted, height: 1.4),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              textCapitalization: TextCapitalization.characters,
-              autofocus: true,
-              style: Aj.h(15),
-              decoration: InputDecoration(
-                hintText: 'Contoh: BP 1234 ABC',
-                filled: true,
-                fillColor: Aj.sand,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Aj.plum, width: 1.5),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Batal', style: Aj.b(14, color: Aj.muted, w: FontWeight.w700)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Aj.plum,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              final text = controller.text.trim();
-              Navigator.pop(ctx);
-              setState(() => _plat = text);
-              if (text.isNotEmpty) {
-                ajSnack(context, 'Plat $text tersimpan & dibagikan ke Guardian', icon: Icons.verified_rounded);
-              }
-            },
-            child: Text('Simpan', style: Aj.b(14, color: Colors.white, w: FontWeight.w800)),
-          ),
-        ],
-      ),
-    );
   }
 
   // ─────────────────────────────────────────────────────────
@@ -277,10 +145,6 @@ class _BerandaTabState extends State<BerandaTab> {
                 const SizedBox(height: 20),
                 AnimatedEntrance(index: 4, child: _tipCard()),
                 const SizedBox(height: 28),
-                AnimatedEntrance(index: 5, child: _title('Pilih Moda Perjalanan')),
-                const SizedBox(height: 12),
-                AnimatedEntrance(index: 6, child: _modeSection()),
-                const SizedBox(height: 28),
                 AnimatedEntrance(
                   index: 7,
                   child: _title(
@@ -305,8 +169,6 @@ class _BerandaTabState extends State<BerandaTab> {
                 AnimatedEntrance(index: 13, child: _title('Guardian Kamu', trailing: _link('Kelola', widget.onManageGuardians))),
                 const SizedBox(height: 12),
                 AnimatedEntrance(index: 14, child: _guardianRow()),
-                const SizedBox(height: 24),
-                AnimatedEntrance(index: 15, child: _pamdalCard()),
               ],
             ),
           ),
@@ -709,169 +571,6 @@ class _BerandaTabState extends State<BerandaTab> {
   }
 
   // ─────────────────────────────────────────────────────────
-  // MODA PERJALANAN
-  // ─────────────────────────────────────────────────────────
-  Widget _modeSection() {
-    final m = _modes[_modeIndex];
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            for (var i = 0; i < _modes.length; i++) ...[
-              if (i > 0) const SizedBox(width: 10),
-              Expanded(child: _modeChip(i)),
-            ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: KeyedSubtree(
-            key: ValueKey(_modeIndex),
-            child: AjCard(
-              radius: 22,
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AjIconBubble(m.icon, bg: m.bg, fg: m.fg, size: 44),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(child: Text(m.title, style: Aj.h(13.5), overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 6),
-                                AjPill(m.tag, bg: m.bg, fg: m.fg, size: 9.5),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            Text(m.desc, style: Aj.b(12, color: Aj.muted, height: 1.4)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_modeIndex == 1) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(color: Aj.sand, borderRadius: BorderRadius.circular(12)),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.pin_outlined, size: 16, color: Aj.plum),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _plat.isEmpty ? 'Plat: Belum dicatat' : 'Plat: $_plat',
-                                  style: Aj.b(12.5, color: _plat.isEmpty ? Aj.muted : Aj.plum, w: FontWeight.w800),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: _showPlatDialog,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Aj.plum,
-                            minimumSize: const Size(0, 40),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          icon: const Icon(Icons.edit_rounded, size: 14),
-                          label: Text(_plat.isEmpty ? 'Catat Plat' : 'Ubah Plat', style: Aj.b(12, color: Colors.white, w: FontWeight.w800)),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  _startButton(m),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _modeChip(int i) {
-    final m = _modes[i];
-    final sel = i == _modeIndex;
-
-    return PressScale(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (sel) return;
-          HapticFeedback.selectionClick();
-          setState(() => _modeIndex = i);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 6),
-          decoration: BoxDecoration(
-            color: sel ? Aj.blush : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: sel ? Aj.plum : Aj.line, width: sel ? 1.7 : 1.1),
-            boxShadow: sel ? null : Aj.softShadow,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(m.icon, size: 26, color: sel ? Aj.plum : Aj.muted),
-              const SizedBox(height: 6),
-              Text(m.label, style: Aj.b(12.5, color: sel ? Aj.plum : Aj.ink, w: FontWeight.w800)),
-              const SizedBox(height: 1),
-              Text(m.badge, style: Aj.b(10, color: sel ? Aj.plum : Aj.muted, w: FontWeight.w700)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _startButton(_Mode m) {
-    return PressScale(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          widget.onOpenMap();
-        },
-        child: Container(
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            gradient: const LinearGradient(colors: [Color(0xFF4A1D5C), Color(0xFF6A2E80)]),
-            boxShadow: const [BoxShadow(color: Color(0x404A1D5C), blurRadius: 14, offset: Offset(0, 6))],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(m.icon, size: 20, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(m.cta, style: Aj.h(14.5, color: Colors.white)),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────
   // REKOMENDASI RUTE
   // ─────────────────────────────────────────────────────────
   Widget _routeCard(_RouteRec r) {
@@ -1059,55 +758,6 @@ class _BerandaTabState extends State<BerandaTab> {
             Text('Guardian', style: Aj.b(11, color: Aj.muted)),
           ],
         ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // PAMDAL
-  // ─────────────────────────────────────────────────────────
-  Widget _pamdalCard() {
-    return AjCard(
-      radius: 22,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: Aj.sosSoft, borderRadius: BorderRadius.circular(14)),
-            child: Text('24h', style: Aj.h(14, color: Aj.sos)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('PAMDAL Polibatam', style: Aj.h(14)),
-                const SizedBox(height: 2),
-                Text('(0778) 469858 • Ext. 102', style: Aj.b(12, color: Aj.muted, w: FontWeight.w600)),
-              ],
-            ),
-          ),
-          PressScale(
-            child: GestureDetector(
-              onTap: () => _call('PAMDAL Polibatam', '(0778) 469858'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                decoration: BoxDecoration(color: Aj.plum, borderRadius: BorderRadius.circular(22)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.phone_rounded, size: 15, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text('Panggil', style: Aj.b(13, color: Colors.white, w: FontWeight.w800)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
