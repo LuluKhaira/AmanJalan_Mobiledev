@@ -133,16 +133,6 @@ class _ProteksiTabState extends State<ProteksiTab>
     }
   }
 
-  void _goBack() {
-    HapticFeedback.selectionClick();
-    final cb = widget.onBackToHome;
-    if (cb != null) {
-      cb();
-    } else {
-      Navigator.of(context).maybePop();
-    }
-  }
-
   // ==========================================
   // BUILD
   // ==========================================
@@ -235,18 +225,6 @@ class _ProteksiTabState extends State<ProteksiTab>
                 child: FromToCard(
                   destinationName: _destination.name,
                   onTap: _openSearch,
-                ),
-              ),
-
-              // 3. TOMBOL KIRI BAWAH PETA: kembali
-              AnimatedPositioned(
-                duration: anim,
-                curve: Curves.easeOutCubic,
-                left: 16,
-                bottom: panelH + 14,
-                child: MapRoundButton(
-                  icon: Icons.arrow_back_rounded,
-                  onTap: _goBack,
                 ),
               ),
 
