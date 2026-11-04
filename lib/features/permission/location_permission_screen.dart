@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:amanjalan/core/theme/app_colors.dart';
+import 'package:amanjalan/features/home/home_screen.dart';
 
 const _fieldFill = Color(0xFFF6F5F8);
 const _lineColor = Color(0xFFE6E3EA);
@@ -49,15 +50,22 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
 
     if (!mounted) return;
     setState(() => _loading = false);
-    _next();
+    _goToGuardianSetup();
   }
 
   void _skip() {
     HapticFeedback.selectionClick();
-    _next();
+    _goToDashboard();
   }
 
-  void _next() {
+  void _goToDashboard() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
+  }
+
+  void _goToGuardianSetup() {
     // TODO: lanjut ke halaman Atur Guardian
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

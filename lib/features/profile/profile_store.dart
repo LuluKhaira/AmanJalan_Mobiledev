@@ -68,9 +68,9 @@ class ProfileStore {
 
   static final ValueNotifier<ProfileData> data = ValueNotifier(
     const ProfileData(
-      fullName: 'Puja Davi',
-      nickname: 'Puja',
-      email: 'pujadavi@gmail.com',
+      fullName: 'AmanJalan',
+      nickname: 'AmanJalan',
+      email: 'uxplora@gmail.com',
       phone: '+62 878-xxxx-xxxx',
       birth: '12 Mei 2007',
       city: 'Batam, Kepulauan Riau',
