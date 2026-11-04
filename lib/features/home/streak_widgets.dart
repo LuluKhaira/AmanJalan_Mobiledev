@@ -173,7 +173,7 @@ class _FlamePainter extends CustomPainter {
 // otomatis jatuh ke api CustomPainter.
 // ─────────────────────────────────────────────────────────────
 
-const _fireOwlAsset = 'assets/images/onboarding/owl_fire.png';
+const _fireOwlAsset = 'assets/images/owl_fire.png';
 
 const _grayMatrix = <double>[
   0.2126, 0.7152, 0.0722, 0, 0, //

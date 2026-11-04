@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -133,7 +132,9 @@ class _EmergencyScreenState extends State<EmergencyScreen>
   Future<bool> _verifyPassword(String password) async {
     final verifier = EmergencySecurity.passwordVerifier;
     if (verifier != null) return verifier(password);
-    return kDebugMode && password.isNotEmpty; // demo; rilis = ditolak
+    // Prototipe frontend (belum ada backend): kata sandi apa saja diterima.
+    // Saat backend siap, set EmergencySecurity.passwordVerifier dan ubah ini.
+    return password.isNotEmpty;
   }
 
   /// Keluar dari SOS = 3 detik tahan + biometrik + kata sandi.
